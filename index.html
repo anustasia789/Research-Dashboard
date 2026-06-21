@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<script type="application/json" id="cowork-artifact-meta">
+{
+  "name": "Research Dashboard Jun26",
+  "schemaVersion": 1,
+  "description": "Global research dashboard synthesizing 14 PDFs (UBS CIO 9 reports incl. post-FOMC Daily Asia 17 Jun + BofA Flow Show 8 Jun + BofA FMS 16 Jun + BofA Research Highlights 12 Jun + UBS Bond Theme Focus 19 Jun) with live market data. Covers YTD returns, equity targets, FOMC June 17 outcome, central bank rates, macro forecasts, regional views, risks, BofA FMS positioning, and UBS vs BofA consensus. As of 20 Jun 2026."
+}
+</script>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Research Dashboard — Jun 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f7; color: #1a1a2e; font-size: 13px; }
+
+  .header { background: #0f172a; color: #fff; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; }
+  .header h1 { font-size: 15px; font-weight: 600; letter-spacing: 0.3px; }
+  .header .meta { font-size: 11px; color: #94a3b8; }
+  .header .sources { font-size: 10px; color: #64748b; margin-top: 2px; }
+
+  .tabs { display: flex; background: #1e293b; padding: 0 20px; gap: 2px; overflow-x: auto; }
+  .tab { padding: 9px 14px; font-size: 11.5px; color: #94a3b8; cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all 0.15s; }
+  .tab:hover { color: #e2e8f0; }
+  .tab.active { color: #38bdf8; border-bottom-color: #38bdf8; font-weight: 600; }
+
+  .content { display: none; padding: 16px 20px; max-width: 1000px; }
+  .content.active { display: block; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+
+  .card { background: #fff; border-radius: 8px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); }
+  .card h3 { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: #64748b; margin-bottom: 8px; }
+
+  .stat-box { background: #fff; border-radius: 8px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); }
+  .stat-box .label { font-size: 10px; color: #64748b; margin-bottom: 3px; }
+  .stat-box .value { font-size: 18px; font-weight: 700; color: #0f172a; }
+  .stat-box .sub { font-size: 10px; color: #64748b; margin-top: 3px; }
+  .stat-box .tgt { font-size: 10px; color: #0284c7; margin-top: 2px; }
+  .up { color: #16a34a !important; }
+  .down { color: #dc2626 !important; }
+  .warn { color: #d97706 !important; }
+
+  .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #64748b; margin: 16px 0 8px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: #f1f5f9; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #475569; padding: 7px 10px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+  td { padding: 7px 10px; border-bottom: 1px solid #f1f5f9; color: #1e293b; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f8fafc; }
+
+  .badge { display: inline-block; padding: 2px 7px; border-radius: 10px; font-size: 10px; font-weight: 600; }
+  .badge-green { background: #dcfce7; color: #15803d; }
+  .badge-red { background: #fee2e2; color: #b91c1c; }
+  .badge-yellow { background: #fef9c3; color: #854d0e; }
+  .badge-blue { background: #dbeafe; color: #1d4ed8; }
+  .badge-gray { background: #f1f5f9; color: #475569; }
+  .badge-purple { background: #ede9fe; color: #6d28d9; }
+  .badge-orange { background: #ffedd5; color: #c2410c; }
+  .badge-sell { background: #fef2f2; color: #991b1b; border: 1px solid #fca5a5; font-size: 11px; padding: 3px 10px; }
+
+  .theme-list { display: flex; flex-direction: column; gap: 8px; }
+  .theme-item { background: #fff; border-radius: 8px; padding: 10px 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); display: flex; gap: 10px; align-items: flex-start; }
+  .theme-icon { font-size: 16px; line-height: 1; flex-shrink: 0; }
+  .theme-body .title { font-size: 12px; font-weight: 600; color: #0f172a; margin-bottom: 3px; }
+  .theme-body .desc { font-size: 11.5px; color: #475569; line-height: 1.4; }
+
+  .risk-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; background: #fff; border-radius: 8px; padding: 9px 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .risk-label { font-size: 12px; font-weight: 600; color: #1e293b; width: 200px; flex-shrink: 0; }
+  .risk-bar-wrap { flex: 1; background: #f1f5f9; border-radius: 4px; height: 7px; }
+  .risk-bar { height: 7px; border-radius: 4px; }
+  .risk-desc { font-size: 11px; color: #64748b; width: 220px; text-align: right; }
+
+  .divider { height: 1px; background: #e2e8f0; margin: 12px 0; }
+  .src { display: inline-block; font-size: 9px; background: #f1f5f9; color: #64748b; border-radius: 4px; padding: 1px 5px; margin-left: 4px; font-weight: 600; vertical-align: middle; }
+  .new-src { display: inline-block; font-size: 9px; background: #fef9c3; color: #854d0e; border-radius: 4px; padding: 1px 5px; margin-left: 4px; font-weight: 700; vertical-align: middle; }
+  .chart-wrap { position: relative; height: 220px; }
+  .note { font-size: 11px; color: #64748b; font-style: italic; margin-top: 6px; }
+
+  /* Score grid (BofA returns) */
+  .score-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 12px; }
+  .score-item { background: #fff; border-radius: 6px; padding: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); text-align: center; }
+  .score-item .asset { font-size: 10px; font-weight: 600; color: #64748b; }
+  .score-item .ret { font-size: 13px; font-weight: 700; }
+  .pos { color: #16a34a; }
+  .neg { color: #dc2626; }
+
+  /* Consensus tab */
+  .consensus-hero { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .consensus-pill { border-radius: 10px; padding: 14px 16px; text-align: center; }
+  .consensus-pill.agree { background: linear-gradient(135deg, #dcfce7, #bbf7d0); border: 1px solid #86efac; }
+  .consensus-pill.split { background: linear-gradient(135deg, #fef9c3, #fde68a); border: 1px solid #fbbf24; }
+  .consensus-pill.disagree { background: linear-gradient(135deg, #fee2e2, #fecaca); border: 1px solid #f87171; }
+  .consensus-pill .pill-label { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; color: #374151; }
+  .consensus-pill .pill-count { font-size: 28px; font-weight: 800; color: #0f172a; }
+  .consensus-pill .pill-desc { font-size: 10px; color: #475569; margin-top: 2px; }
+
+  .vs-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 14px; }
+  .vs-table th { padding: 8px 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #fff; }
+  .vs-table th:first-child { background: #334155; text-align: left; }
+  .vs-table th.ubs-head { background: #c2410c; text-align: center; width: 220px; }
+  .vs-table th.verdict-head { background: #1d4ed8; text-align: center; width: 130px; }
+  .vs-table th.bofa-head { background: #15803d; text-align: center; width: 220px; }
+  .vs-table td { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+  .vs-table td:first-child { font-weight: 600; color: #334155; font-size: 11.5px; background: #f8fafc; }
+  .vs-table td.ubs-col { color: #c2410c; font-size: 11.5px; }
+  .vs-table td.bofa-col { color: #15803d; font-size: 11.5px; }
+  .vs-table td.verdict-col { text-align: center; font-size: 11px; font-weight: 700; }
+  .vs-table tr:last-child td { border-bottom: none; }
+  .vs-table tr:hover td { background: #f0f9ff; }
+  .vs-table tr:hover td:first-child { background: #e0f2fe; }
+
+  .dominant-call { background: #0f172a; color: #fff; border-radius: 10px; padding: 16px 18px; margin-bottom: 14px; }
+  .dominant-call h2 { font-size: 13px; font-weight: 700; color: #38bdf8; margin-bottom: 10px; }
+  .dominant-call .dc-row { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 8px; }
+  .dominant-call .dc-num { font-size: 18px; font-weight: 800; color: #38bdf8; width: 28px; flex-shrink: 0; }
+  .dominant-call .dc-text { font-size: 12px; color: #cbd5e1; line-height: 1.5; }
+  .dominant-call .dc-text strong { color: #f1f5f9; }
+
+  .signal-bar { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .signal-label { font-size: 12px; font-weight: 600; width: 180px; flex-shrink: 0; }
+  .signal-icons { display: flex; gap: 6px; align-items: center; flex: 1; flex-wrap: wrap; }
+  .signal-tag { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+  .signal-tag.bull { background: #dcfce7; color: #15803d; }
+  .signal-tag.bear { background: #fee2e2; color: #b91c1c; }
+  .signal-tag.neutral { background: #f1f5f9; color: #475569; }
+  .signal-tag.caution { background: #fef9c3; color: #854d0e; }
+  .signal-note { font-size: 10.5px; color: #64748b; margin-left: auto; text-align: right; max-width: 260px; }
+
+  /* FMS specific */
+  .fms-hero { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+  .fms-kpi { background: #fff; border-radius: 8px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); text-align: center; }
+  .fms-kpi .fk-label { font-size: 10px; color: #64748b; margin-bottom: 4px; }
+  .fms-kpi .fk-val { font-size: 22px; font-weight: 800; }
+  .fms-kpi .fk-sub { font-size: 10px; color: #64748b; margin-top: 3px; }
+  .fms-kpi .fk-signal { font-size: 10px; font-weight: 700; margin-top: 4px; padding: 2px 8px; border-radius: 6px; display: inline-block; }
+  .fk-sig-sell { background: #fee2e2; color: #991b1b; }
+  .fk-sig-neutral { background: #f1f5f9; color: #475569; }
+  .fk-sig-buy { background: #dcfce7; color: #15803d; }
+
+  .fms-bar-row { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 8px; padding: 8px 12px; margin-bottom: 6px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .fms-bar-label { font-size: 11.5px; font-weight: 600; color: #334155; width: 220px; flex-shrink: 0; }
+  .fms-bar-wrap { flex: 1; background: #f1f5f9; border-radius: 4px; height: 8px; }
+  .fms-bar-fill { height: 8px; border-radius: 4px; }
+  .fms-bar-pct { font-size: 11px; font-weight: 700; width: 45px; text-align: right; }
+
+  .alloc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .alloc-item { display: flex; align-items: center; gap: 8px; background: #fff; border-radius: 6px; padding: 7px 10px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+  .alloc-name { font-size: 11.5px; font-weight: 600; color: #334155; flex: 1; }
+  .alloc-ow { font-size: 11px; font-weight: 700; }
+  .alloc-chg { font-size: 10px; color: #64748b; }
+  .ow-pos { color: #15803d; }
+  .ow-neg { color: #dc2626; }
+
+  /* Alert banner */
+  .alert-banner { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; display: flex; gap: 10px; align-items: flex-start; }
+  .alert-banner .ab-icon { font-size: 18px; flex-shrink: 0; }
+  .alert-banner .ab-title { font-size: 12px; font-weight: 700; color: #991b1b; margin-bottom: 2px; }
+  .alert-banner .ab-body { font-size: 11.5px; color: #7f1d1d; }
+
+  .info-banner { background: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 10px 14px; margin-bottom: 14px; display: flex; gap: 10px; align-items: flex-start; }
+  .info-banner .ab-icon { font-size: 18px; flex-shrink: 0; }
+  .info-banner .ab-title { font-size: 12px; font-weight: 700; color: #1d4ed8; margin-bottom: 2px; }
+  .info-banner .ab-body { font-size: 11.5px; color: #1e3a8a; }
+
+  @media (max-width: 600px) {
+    .grid-2, .grid-3, .grid-4, .fms-hero { grid-template-columns: 1fr 1fr; }
+    .score-grid { grid-template-columns: repeat(3, 1fr); }
+    .consensus-hero { grid-template-columns: 1fr; }
+    .alloc-grid { grid-template-columns: 1fr; }
+  }
+
+  /* ── Scenario Engine ── */
+  .sc-inputs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+  .sc-input-group { background: #fff; border-radius: 8px; padding: 10px 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); }
+  .sc-input-group label { display: block; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: #64748b; margin-bottom: 6px; }
+  .sc-input-group select { width: 100%; border: 1px solid #e2e8f0; border-radius: 6px; padding: 6px 8px; font-size: 12px; color: #1e293b; background: #f8fafc; cursor: pointer; }
+  .sc-input-group select:focus { outline: none; border-color: #38bdf8; }
+  .sc-reset { display: inline-flex; align-items: center; gap: 6px; background: #0f172a; color: #38bdf8; border: none; border-radius: 6px; padding: 7px 14px; font-size: 11px; font-weight: 700; cursor: pointer; margin-bottom: 14px; }
+  .sc-reset:hover { background: #1e293b; }
+
+  .regime-banner { border-radius: 10px; padding: 16px 18px; margin-bottom: 14px; border-width: 1px; border-style: solid; }
+  .regime-banner .rg-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; opacity: 0.7; }
+  .regime-banner .rg-name { font-size: 20px; font-weight: 800; margin-bottom: 6px; }
+  .regime-banner .rg-desc { font-size: 12px; line-height: 1.6; color: #374151; }
+  .regime-banner .rg-years { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+  .regime-banner .rg-year-label { font-size: 10px; color: #64748b; font-weight: 600; }
+  .regime-banner .rg-year { font-size: 10px; font-weight: 700; background: rgba(0,0,0,0.08); border-radius: 4px; padding: 2px 8px; }
+
+  .sc-body { display: grid; grid-template-columns: 180px 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .sc-prob-box { background: #fff; border-radius: 8px; padding: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); text-align: center; display: flex; flex-direction: column; }
+  .sc-prob-box .pb-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: #64748b; margin-bottom: 8px; }
+  .sc-prob-box .pb-val { font-size: 34px; font-weight: 800; margin-bottom: 2px; }
+  .sc-prob-box .pb-sub { font-size: 10px; color: #64748b; margin-bottom: 8px; }
+  .sc-prob-box .pb-bar-wrap { background: #f1f5f9; border-radius: 6px; height: 8px; overflow: hidden; margin-bottom: 12px; }
+  .sc-prob-box .pb-bar { height: 8px; border-radius: 6px; transition: width 0.5s ease; }
+  .sc-prob-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 0; border-top: 1px solid #f1f5f9; }
+  .sc-prob-row .pr-name { font-size: 10px; color: #64748b; }
+  .sc-prob-row .pr-pct { font-size: 11px; font-weight: 700; }
+
+  .sc-assets { background: #fff; border-radius: 8px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); }
+  .sc-assets h4 { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: #64748b; margin-bottom: 10px; }
+  .sc-asset-row { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #f8fafc; }
+  .sc-asset-row:last-child { border-bottom: none; }
+  .sc-asset-name { font-size: 11.5px; font-weight: 600; color: #1e293b; flex: 1; }
+  .sc-sig { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 5px; min-width: 62px; text-align: center; }
+  .sc-sig.bull    { background: #dcfce7; color: #15803d; }
+  .sc-sig.bear    { background: #fee2e2; color: #991b1b; }
+  .sc-sig.caution { background: #fef9c3; color: #854d0e; }
+  .sc-sig.neutral { background: #f1f5f9; color: #475569; }
+
+  .sc-alignment { background: #fff; border-radius: 8px; padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); }
+  .sc-alignment h4 { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: #64748b; margin-bottom: 10px; }
+  .sc-house { margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; }
+  .sc-house:last-child { border-bottom: none; margin-bottom: 0; }
+  .sc-house .house-label { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+  .sc-house.ubs .house-label { color: #c2410c; }
+  .sc-house.bofa .house-label { color: #15803d; }
+  .sc-house .house-text { font-size: 11.5px; color: #374151; line-height: 1.55; }
+  .sc-house .align-chip { display: inline-block; font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 4px; margin-bottom: 5px; }
+  .align-strong   { background: #dcfce7; color: #15803d; }
+  .align-partial  { background: #fef9c3; color: #854d0e; }
+  .align-weak     { background: #fee2e2; color: #991b1b; }
+
+  .quilt-wrap { overflow-x: auto; margin-top: 4px; -webkit-overflow-scrolling: touch; }
+  .quilt-table { border-collapse: separate; border-spacing: 2px; min-width: 1560px; }
+  .quilt-table th { font-size: 10px; color: #64748b; padding: 0 2px 5px; text-align: center; font-weight: 600; white-space: nowrap; }
+  .quilt-table th.hl-yr { color: #c2410c; font-weight: 800; }
+  .quilt-table td.rank-lbl { font-size: 10px; color: #94a3b8; text-align: right; padding-right: 6px; font-weight: 600; white-space: nowrap; }
+  .q-cell { width: 74px; min-width: 74px; height: 52px; text-align: center; padding: 4px 2px; border-radius: 4px; vertical-align: middle; }
+  .q-cell.hl { outline: 2.5px solid #0f172a; outline-offset: -1px; }
+  .q-name { font-size: 9px; font-weight: 800; line-height: 1.2; }
+  .q-ret  { font-size: 8.5px; margin-top: 1px; opacity: 0.9; }
+  .q-dot  { width: 7px; height: 7px; border-radius: 50%; margin: 2px auto 0; }
+  .quilt-legend { margin-top: 8px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .quilt-legend span { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #64748b; }
+  .ql-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+
+  @media (max-width: 600px) {
+    .sc-inputs { grid-template-columns: 1fr 1fr; }
+    .sc-body { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <h1>Global Research Dashboard</h1>
+    <div class="sources">UBS CIO GWM (9 reports, incl. post-FOMC Daily Asia 17 Jun) · BofA Flow Show (8 Jun) · BofA FMS "The Frozen Bulls" (16 Jun) · BofA Research Highlights (12 Jun) · UBS Bond Theme Focus (19 Jun)</div>
+  </div>
+  <div class="meta" style="text-align:right;">Updated 20 Jun 2026<br><span style="color:#475569;">14 PDFs</span></div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="showTab('overview',this)">Overview</div>
+  <div class="tab" onclick="showTab('markets',this)">Markets &amp; Forecasts</div>
+  <div class="tab" onclick="showTab('macro',this)">Macro &amp; Rates</div>
+  <div class="tab" onclick="showTab('regional',this)">Regional Views</div>
+  <div class="tab" onclick="showTab('risks',this)">Risks</div>
+  <div class="tab" onclick="showTab('bofa',this)">BofA Flow Show</div>
+  <div class="tab" onclick="showTab('fms',this)">📊 BofA FMS</div>
+  <div class="tab" onclick="showTab('consensus',this)">⚖️ UBS vs BofA</div>
+  <div class="tab" onclick="showTab('scenarios',this)">🔮 Scenarios</div>
+</div>
+
+<!-- ==================== OVERVIEW ==================== -->
+<div id="tab-overview" class="content active">
+
+  <div class="alert-banner">
+    <div class="ab-icon">🏦</div>
+    <div>
+      <div class="ab-title">FOMC June 17: Fed held at 3.50–3.75% — but hawkish shift. ~Half of officials now see at least one hike before year-end. <span class="new-src">NEW · UBS Daily Asia 17 Jun</span></div>
+      <div class="ab-body">Unanimous hold, but median rate projections for 2026/27/28 all revised <strong>upward</strong>. Warsh did not submit dot plot projections (consistent with his criticism of the framework). Inflation not returning to 2% until 2028. S&amp;P 500 fell 1.2% to 7,420 on announcement. UBS still expects eventual cuts to 3–3.25% on softer 2H growth.</div>
+    </div>
+  </div>
+  <div class="alert-banner" style="background:#fef9c3;border-color:#fbbf24;">
+    <div class="ab-icon">📊</div>
+    <div>
+      <div class="ab-title" style="color:#854d0e;">BofA Bull &amp; Bear = 8.9 — Official SELL Signal · Semis 80% most crowded ever · CPI 4.2% YoY (Apr '23 high)</div>
+      <div class="ab-body" style="color:#78350f;">40% of fund managers expect a Fed hike (up from 16% in May). FOMC outcome validates their concern. <span class="src">BofA FMS 16 Jun · BofA Research Highlights 12 Jun</span></div>
+    </div>
+  </div>
+
+  <div class="section-title">YTD Returns <span class="src">UBS At a Glance · 19 Jun 2026</span></div>
+  <div class="grid-4">
+    <div class="stat-box"><div class="label">S&amp;P 500 YTD</div><div class="value up">+10.2%</div></div>
+    <div class="stat-box"><div class="label">Euro Stoxx 50 YTD</div><div class="value up">+11.7%</div></div>
+    <div class="stat-box"><div class="label">MSCI EM (USD) YTD</div><div class="value up">+28.7%</div></div>
+    <div class="stat-box"><div class="label">MSCI CH YTD</div><div class="value up">+7.0%</div></div>
+    <div class="stat-box"><div class="label">US IG Bonds YTD</div><div class="value up">+0.5%</div></div>
+    <div class="stat-box"><div class="label">EUR IG Bonds YTD</div><div class="value up">+1.0%</div></div>
+    <div class="stat-box"><div class="label">EM Bonds (EMBIGD) YTD</div><div class="value up">+3.4%</div></div>
+    <div class="stat-box"><div class="label">US HY Bonds YTD</div><div class="value up">+0.4%</div></div>
+  </div>
+
+  <div class="section-title">Market Snapshot <span class="src">19 Jun 2026</span></div>
+  <div class="grid-4">
+    <div class="stat-box">
+      <div class="label">S&amp;P 500</div><div class="value">7,420</div>
+      <div class="sub down">−1.21% today</div>
+      <div class="tgt">UBS target Jun'27: 8,200 (+10.5%)</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">Nikkei 225</div><div class="value">71,053</div>
+      <div class="sub up">+1.65% today</div>
+      <div class="tgt">YTD: +40%</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">US 10Y Treasury</div><div class="value">4.49%</div>
+      <div class="sub">UBS target Dec'26: 4.25%</div>
+      <div class="tgt">Fed on hold at 3.63%</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">US CPI (May) <span class="new-src">NEW</span></div>
+      <div class="value warn">4.2% YoY</div>
+      <div class="sub">Highest since Apr 2023</div>
+      <div class="tgt">Core PCE tracking: 3.3% YoY</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">Gold</div><div class="value">$4,275</div>
+      <div class="sub">−2% this week</div>
+      <div class="tgt">UBS target Jun'27: $5,200</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">Brent Crude</div><div class="value">$79.6</div>
+      <div class="sub">Post Iran deal</div>
+      <div class="tgt">UBS target Sep'26: $105</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">BofA Bull &amp; Bear <span class="new-src">SELL</span></div>
+      <div class="value down">8.9</div>
+      <div class="sub">↑ from 8.9 → 9.2 (Flow Show)</div>
+      <div class="tgt">Threshold: ≥8.0 = sell signal</div>
+    </div>
+    <div class="stat-box">
+      <div class="label">AI Capex 2026</div><div class="value">~$700B</div>
+      <div class="sub">+69% YoY</div>
+      <div class="tgt">39% of S&amp;P 500 = AI (BofA)</div>
+    </div>
+  </div>
+
+  <div class="section-title">Key Investment Calls <span class="src">UBS CIO · Jun 2026</span></div>
+  <div class="theme-list">
+    <div class="theme-item">
+      <div class="theme-icon">🤖</div>
+      <div class="theme-body">
+        <div class="title">AI Remains the Dominant Market Driver</div>
+        <div class="desc">Hyperscaler AI capex ~$700bn in 2026 (+69% YoY). AI-linked semis, chip equipment, and memory drove indices. S&amp;P 500 EPS: $335 (2026E) → $375 (2027E). UBS targets 8,200 by Jun 2027. Asia's AI hardware supply chain expects 72% earnings growth.</div>
+      </div>
+    </div>
+    <div class="theme-item">
+      <div class="theme-icon">⚠️</div>
+      <div class="theme-body">
+        <div class="title">Mid-Cycle Signal: Rotate from Mega-Tech to Value <span class="new-src">NEW · BofA Research Highlights 12 Jun</span></div>
+        <div class="desc">BofA's US Regime Indicator officially entered Mid-Cycle in May (confirmed by 2nd consecutive month). In mid-cycle, Value outperforms with a 78% success rate (vs 67% for Growth). Price/FCF, Price/Sales, and EV/EBITDA factors show ~90% hit rates. Tech currently underrepresented in top-performing capital allocation quintile. Analog: March 2000 peak — same mid-cycle macro readings then.</div>
+      </div>
+    </div>
+    <div class="theme-item">
+      <div class="theme-icon">📊</div>
+      <div class="theme-body">
+        <div class="title">Broaden the Rally — Diversify Now</div>
+        <div class="desc">UBS expects market leadership to widen in 2H26. ~40% of UBS platform equity investors hold 50%+ in ≤10 stocks. Rising single-stock dispersion magnifies concentration risk. BofA FMS: long global semis is 80% most crowded trade — all-time FMS record.</div>
+      </div>
+    </div>
+    <div class="theme-item">
+      <div class="theme-icon">🛢️</div>
+      <div class="theme-body">
+        <div class="title">Iran Deal Opens Oil Upside — Use Dip for Commodity Exposure</div>
+        <div class="desc">US-Iran agreement signed. Brent at $79.6/bbl; UBS targets $105 by Sep 2026 (+32%). BofA FMS: fund managers expected $86/bbl by year-end (pre Iran deal). BofA calls this "V for Victory."</div>
+      </div>
+    </div>
+    <div class="theme-item">
+      <div class="theme-icon">🔒</div>
+      <div class="theme-body">
+        <div class="title">Lock In Yields — Fed Confirmed Hawkish Hold, Hike Risk Real <span class="new-src">UPDATED · UBS Daily Asia 17 Jun</span></div>
+        <div class="desc">June 17 FOMC: unanimous hold at 3.50–3.75% but dot plot revised higher across 2026/27/28. ~Half of FOMC members see at least one hike before year-end. Warsh did not submit projections. CPI 4.2% YoY; inflation not back to 2% until 2028. UBS still expects eventual cuts to 3–3.25% on softer 2H growth and moderating inflation — but the bar for near-term action in either direction is now high. UBS Bond Theme Focus: lock in medium-tenor IG bonds at 4.5–5% (USD) / 3.0–3.4% (EUR) before yields fall.</div>
+      </div>
+    </div>
+    <div class="theme-item">
+      <div class="theme-icon">⚡</div>
+      <div class="theme-body">
+        <div class="title">Three Transformational Innovations <span class="src">UBS At a Glance 19 Jun</span></div>
+        <div class="desc"><strong>1. AI</strong> — diversify within AI, broadening to semis, software, applications. <strong>2. Energy infrastructure &amp; electrification</strong> — record capital flows, data centre power, critical resources. <strong>3. Longevity / healthcare</strong> — clinical breakthroughs, resilient supply chains.</div>
+      </div>
+    </div>
+    <div class="theme-item">
+      <div class="theme-icon">💡</div>
+      <div class="theme-body">
+        <div class="title">Intel Double-Upgrade to Buy <span class="new-src">NEW · BofA Research Highlights 12 Jun</span></div>
+        <div class="desc">BofA double-upgrades Intel (INTC) to Buy from Underperform. PO raised to $135 (from $96). Thesis: agentic CPU TAM $170bn+ by CY30, foundry opportunity $45bn+. CDNS '14A node' IP sign-up + Terafab engagements build longer-term foundry visibility. CY30E EPS power: $6+ vs prior $3–4.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-title">Asset Class Ratings <span class="src">UBS CIO</span></div>
+  <table>
+    <thead><tr><th>Asset Class</th><th>Rating</th><th>Key Preference</th></tr></thead>
+    <tbody>
+      <tr><td>Global Equities</td><td><span class="badge badge-green">Attractive</span></td><td>US, Asia ex-Japan, Switzerland, Japan, EMs</td></tr>
+      <tr><td>Fixed Income</td><td><span class="badge badge-blue">Selective</span></td><td>Quality IG + EM credit; lock in yields</td></tr>
+      <tr><td>Commodities</td><td><span class="badge badge-green">Attractive</span></td><td>Broad diversified index; energy on dips</td></tr>
+      <tr><td>Alternatives</td><td><span class="badge badge-blue">Favorable</span></td><td>Hedge fund diversification; structured products</td></tr>
+      <tr><td>USD</td><td><span class="badge badge-yellow">Neutral-Positive</span></td><td>Well bid into Q3</td></tr>
+      <tr><td>CHF</td><td><span class="badge badge-gray">Neutral</span></td><td>SNB at 0%; EURCHF supported by ECB rate differential</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ==================== MARKETS ==================== -->
+<div id="tab-markets" class="content">
+  <div class="section-title">Equity Index Forecasts <span class="src">UBS CIO · 18 Jun 2026</span></div>
+  <table>
+    <thead><tr><th>Index</th><th>Current</th><th>Dec 2026</th><th>Jun 2027</th><th>Upside</th></tr></thead>
+    <tbody>
+      <tr><td>S&amp;P 500</td><td>7,420</td><td>7,900</td><td>8,200</td><td class="up">+10.5%</td></tr>
+      <tr><td>S&amp;P 500 EPS</td><td>—</td><td>$335E</td><td>$375E</td><td class="up">+34% from 2025</td></tr>
+      <tr><td>Euro Stoxx 50</td><td>6,300</td><td>6,300</td><td>6,600</td><td class="up">+4.8%</td></tr>
+      <tr><td>FTSE 100</td><td>10,509</td><td>11,000</td><td>11,300</td><td class="up">+7.5%</td></tr>
+      <tr><td>SMI (Switzerland)</td><td>13,815</td><td>14,000</td><td>14,400</td><td class="up">+4.2%</td></tr>
+      <tr><td>TOPIX (Japan)</td><td>4,013</td><td>4,200</td><td>4,300</td><td class="up">+7.2%</td></tr>
+      <tr><td>MSCI Asia ex-Japan</td><td>1,181</td><td>1,233</td><td>1,299</td><td class="up">+10.0%</td></tr>
+      <tr><td>MSCI China</td><td>75</td><td>85</td><td>91</td><td class="up">+21.3%</td></tr>
+      <tr><td>MSCI Emerging Markets</td><td>1,783</td><td>1,850</td><td>1,920</td><td class="up">+7.7%</td></tr>
+      <tr><td>MSCI AC World</td><td>1,346</td><td>1,410</td><td>1,470</td><td class="up">+9.2%</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">Equity Upside to Jun 2027 Targets</div>
+  <div class="card"><div class="chart-wrap"><canvas id="equityChart"></canvas></div></div>
+
+  <div class="section-title">Commodities <span class="src">UBS CIO · 18 Jun 2026</span></div>
+  <table>
+    <thead><tr><th>Commodity</th><th>Current</th><th>Sep 2026</th><th>Dec 2026</th><th>Jun 2027</th></tr></thead>
+    <tbody>
+      <tr><td>Gold (USD/oz)</td><td>4,379</td><td>4,400</td><td>4,600</td><td>5,200</td></tr>
+      <tr><td>Silver (USD/oz)</td><td>71.3</td><td>65.0</td><td>70.0</td><td>75.0</td></tr>
+      <tr><td>Brent Crude (USD/bbl)</td><td>79.6</td><td>105.0</td><td>95.0</td><td>90.0</td></tr>
+      <tr><td>WTI (USD/bbl)</td><td>76.8</td><td>97.0</td><td>87.0</td><td>86.0</td></tr>
+      <tr><td>Copper (USD/MT)</td><td>13,815</td><td>14,000</td><td>14,500</td><td>15,500</td></tr>
+      <tr><td>Natural Gas (USD/MMBtu)</td><td>3.15</td><td>3.60</td><td>4.10</td><td>3.40</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">BofA "Fab Five" Infrastructure Software <span class="new-src">NEW · BofA Research 10 Jun</span></div>
+  <div class="info-banner">
+    <div class="ab-icon">💻</div>
+    <div>
+      <div class="ab-title">All five rated Buy — can outperform in 2H26</div>
+      <div class="ab-body">DDOG +58%, FROG +43%, SNOW +37%, TWLO +38% post Q1 results. MDB +5% (Atlas growth solid at +29% y/y but not a catalyst). AI tailwinds expected to accelerate. BofA: execution, capital intensity, and platform differentiation are key differentiators.</div>
+    </div>
+  </div>
+  <table>
+    <thead><tr><th>Company</th><th>Ticker</th><th>Rating</th><th>Post-Q1 Return</th><th>Key AI Angle</th></tr></thead>
+    <tbody>
+      <tr><td>Datadog</td><td>DDOG</td><td><span class="badge badge-green">Buy</span></td><td class="up">+58%</td><td>AI observability; platform consolidation</td></tr>
+      <tr><td>JFrog</td><td>FROG</td><td><span class="badge badge-green">Buy</span></td><td class="up">+43%</td><td>DevOps/MLOps; AI artifact management</td></tr>
+      <tr><td>Twilio</td><td>TWLO</td><td><span class="badge badge-green">Buy</span></td><td class="up">+38%</td><td>Agentic AI communications layer</td></tr>
+      <tr><td>Snowflake</td><td>SNOW</td><td><span class="badge badge-green">Buy</span></td><td class="up">+37%</td><td>AI data platform; consumption model</td></tr>
+      <tr><td>MongoDB</td><td>MDB</td><td><span class="badge badge-green">Buy</span></td><td class="up">+5%</td><td>Atlas +29% y/y; agentic AI data layer</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ==================== MACRO & RATES ==================== -->
+<div id="tab-macro" class="content">
+
+  <div class="alert-banner">
+    <div class="ab-icon">🏦</div>
+    <div>
+      <div class="ab-title">FOMC June 17 Outcome — Hawkish Hold Confirmed <span class="new-src">NEW · UBS Daily Asia 17 Jun</span></div>
+      <div class="ab-body"><strong>Decision:</strong> Unanimous hold at 3.50–3.75% (4th consecutive). <strong>Hawkish shift:</strong> ~half of officials now see at least one hike before year-end. Median dot plot revised higher for 2026, 2027, and 2028. Warsh did not submit his own projections (consistent with his criticism of the dot plot framework — raises questions about the tool's future). Balance sheet language adjusted; easing bias removed entirely. <strong>Inflation:</strong> not returning to 2% until 2028. Growth: 2026 revised slightly lower. <strong>UBS view:</strong> still expects ultimate move toward 3–3.25%, driven by softer 2H growth and moderating inflation — but the bar for action in either direction is now high. Iran deal pushes energy supply-side inflation lower, which may eventually ease the Fed's hand.</div>
+    </div>
+  </div>
+
+  <div class="alert-banner">
+    <div class="ab-icon">📈</div>
+    <div>
+      <div class="ab-title">US CPI hit 4.2% YoY in May — highest since April 2023 <span class="new-src">BofA US Watch 10 Jun</span></div>
+      <div class="ab-body">Headline: +0.47% m/m (inline). Core: +0.21% m/m. Core PCE tracking revised up to 27bp / 3.3% YoY — portfolio management fees (stock gains) feeding into services CPI. Core goods fell -0.1% m/m (tariffs fading). Core services +0.29% (shelter + travel firm). FOMC projections now reflect this persistent inflation path.</div>
+    </div>
+  </div>
+
+  <div class="section-title">Central Bank Policy Rates <span class="src">UBS CIO Forecasts</span></div>
+  <table>
+    <thead><tr><th>Central Bank</th><th>Current</th><th>Sep 2026</th><th>Dec 2026</th><th>Mar 2027</th><th>Jun 2027</th></tr></thead>
+    <tbody>
+      <tr><td>Fed (US)</td><td>3.63%</td><td>3.63%</td><td>3.63%</td><td>3.38%</td><td>3.13%</td></tr>
+      <tr><td>ECB</td><td>2.25%</td><td><strong class="up">2.50%</strong></td><td>2.50%</td><td>2.50%</td><td>2.25%</td></tr>
+      <tr><td>BoE</td><td>3.75%</td><td>3.75%</td><td>3.75%</td><td>3.50%</td><td>3.25%</td></tr>
+      <tr><td>SNB</td><td>0.00%</td><td>0.00%</td><td>0.00%</td><td>0.00%</td><td><strong class="up">0.25%</strong></td></tr>
+      <tr><td>BoJ</td><td>1.00%</td><td>1.00%</td><td><strong class="up">1.25%</strong></td><td>1.25%</td><td>1.50%</td></tr>
+      <tr><td>RBA</td><td>4.35%</td><td><strong class="up">4.60%</strong></td><td>4.60%</td><td>4.60%</td><td>4.60%</td></tr>
+      <tr><td>RBNZ</td><td>2.25%</td><td>2.50%</td><td><strong class="up">3.00%</strong></td><td>3.00%</td><td>3.00%</td></tr>
+      <tr><td>PBoC</td><td>1.40%</td><td>1.40%</td><td><strong class="down">1.30%</strong></td><td>1.30%</td><td>1.30%</td></tr>
+    </tbody>
+  </table>
+  <div class="note" style="background:#fef2f2;border-radius:6px;padding:8px 12px;border-left:3px solid #ef4444;font-style:normal;color:#7f1d1d;"><strong>FOMC June 17 update:</strong> Rates held at 3.50–3.75% but dot plot shifted hawkish — 2026/27/28 medians all revised up. ~Half of officials see at least one hike before year-end. Warsh did not submit projections. UBS still expects cuts to 3–3.25% in 2H but acknowledges a high bar for any move. Inflation not back to 2% until 2028. <span class="new-src">UBS Daily Asia 17 Jun</span></div>
+
+  <div class="divider"></div>
+  <div class="section-title">US &amp; Key Market Interest Rates <span class="src">UBS CIO · 18 Jun 2026</span></div>
+  <table>
+    <thead><tr><th>Rate</th><th>Current</th><th>Sep 2026</th><th>Dec 2026</th><th>Jun 2027</th></tr></thead>
+    <tbody>
+      <tr><td>USD 2Y Treasury</td><td>4.18%</td><td>3.75%</td><td>3.75%</td><td>3.25%</td></tr>
+      <tr><td>USD 10Y Treasury</td><td>4.49%</td><td>4.25%</td><td>4.25%</td><td>4.00%</td></tr>
+      <tr><td>USD 30Y Treasury</td><td>4.93%</td><td>4.80%</td><td>4.75%</td><td>4.50%</td></tr>
+      <tr><td>EUR 10Y Bund</td><td>2.93%</td><td>2.80%</td><td>2.75%</td><td>2.50%</td></tr>
+      <tr><td>JPY 10Y JGB</td><td>2.60%</td><td>2.90%</td><td>2.70%</td><td>2.70%</td></tr>
+      <tr><td>GBP 10Y Gilt</td><td>4.75%</td><td>4.50%</td><td>4.50%</td><td>4.25%</td></tr>
+      <tr><td>CHF 10Y Eidg.</td><td>0.31%</td><td>0.50%</td><td>0.50%</td><td>0.50%</td></tr>
+    </tbody>
+  </table>
+
+  <div class="divider"></div>
+  <div class="section-title">2026 GDP &amp; Inflation Forecasts <span class="src">UBS INV / CIO</span></div>
+  <table>
+    <thead><tr><th>Economy</th><th>GDP 2025</th><th>GDP 2026E</th><th>GDP 2027E</th><th>CPI 2026E</th><th>CPI 2027E</th></tr></thead>
+    <tbody>
+      <tr><td><strong>US</strong></td><td>2.1%</td><td>2.3%</td><td>2.1%</td><td><span class="badge badge-red">3.3%</span></td><td>2.2%</td></tr>
+      <tr><td>Eurozone</td><td>1.5%</td><td>0.8%</td><td>1.2%</td><td>2.8%</td><td>2.3%</td></tr>
+      <tr><td>UK</td><td>1.4%</td><td>1.0%</td><td>1.1%</td><td>3.1%</td><td>2.6%</td></tr>
+      <tr><td>Switzerland</td><td>1.4%</td><td>1.1%</td><td>1.1%</td><td>0.6%</td><td>0.6%</td></tr>
+      <tr><td><strong>China</strong></td><td>5.0%</td><td>4.5%</td><td>4.6%</td><td>0.6%</td><td>0.8%</td></tr>
+      <tr><td>Japan</td><td>1.1%</td><td>0.7%</td><td>1.1%</td><td>2.0%</td><td>2.5%</td></tr>
+      <tr><td>India</td><td>7.7%</td><td>6.2%</td><td>6.7%</td><td>5.2%</td><td>4.7%</td></tr>
+      <tr><td>South Korea</td><td>1.0%</td><td>2.8%</td><td>2.2%</td><td>2.7%</td><td>1.9%</td></tr>
+      <tr><td>Taiwan</td><td>8.7%</td><td>8.0%</td><td>4.3%</td><td>1.9%</td><td>1.9%</td></tr>
+      <tr><td>World</td><td>3.5%</td><td>3.1%</td><td>3.3%</td><td>3.7%</td><td>3.0%</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">May Jobs Report <span class="new-src">NEW · BofA Morning Market Tidbits 10 Jun</span></div>
+  <div class="info-banner">
+    <div class="ab-icon">💼</div>
+    <div>
+      <div class="ab-title">Strong headline, but World Cup / seasonal boost inflated the number</div>
+      <div class="ab-body">Payroll gains concentrated in leisure &amp; hospitality + local government — consistent with World Cup-related hiring or Memorial Day seasonal quirks. Construction also firm (World Cup prep + data centers). Estimated temporary boost: 60–100k. Underlying job growth: ~60–90k — still comfortably above the 20k breakeven. 3-month average: 190k; 6-month: 92k. Labor market has "bottomed out."</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== REGIONAL ==================== -->
+<div id="tab-regional" class="content">
+  <div class="section-title">Regional Equity Views <span class="src">UBS CIO · Jun 2026</span></div>
+  <table>
+    <thead><tr><th>Region</th><th>Rating</th><th>Key Driver</th><th>Upside</th></tr></thead>
+    <tbody>
+      <tr><td>US (S&amp;P 500)</td><td><span class="badge badge-green">Attractive</span></td><td>AI capex, resilient earnings, fiscal spending</td><td class="up">+10.5% to 8,200</td></tr>
+      <tr><td>Asia ex-Japan</td><td><span class="badge badge-green">Attractive</span></td><td>AI hardware supply chain, 72% EPS growth</td><td class="up">+10.0% to 1,299</td></tr>
+      <tr><td>Japan</td><td><span class="badge badge-green">Constructive</span></td><td>Nikkei +40% YTD; AI semis; Iran deal energy positive</td><td class="up">+7.2% (TOPIX)</td></tr>
+      <tr><td>China Offshore</td><td><span class="badge badge-green">Attractive</span></td><td>AI internet agents re-rating; tech earnings</td><td class="up">+21.3% (MSCI China)</td></tr>
+      <tr><td>China A-shares</td><td><span class="badge badge-blue">Selective</span></td><td>Favor high-dividend + growth; weak consumption</td><td>Flat MTD</td></tr>
+      <tr><td>Korea</td><td><span class="badge badge-green">Strong</span></td><td>Kospi +100% YTD; AI semiconductor cycle</td><td>—</td></tr>
+      <tr><td>Taiwan</td><td><span class="badge badge-green">Strong</span></td><td>GDP 8.7% in 2025; AI chip manufacturing; TSMC cycle</td><td>—</td></tr>
+      <tr><td>Europe (Eurostoxx)</td><td><span class="badge badge-yellow">Neutral</span></td><td>ECB hiking; slow growth (EZ GDP 0.8%)</td><td class="up">+4.8% to Jun'27</td></tr>
+      <tr><td>Switzerland</td><td><span class="badge badge-green">Attractive</span></td><td>Quality defensive; SNB at 0%</td><td class="up">+4.2%</td></tr>
+      <tr><td>Emerging Markets</td><td><span class="badge badge-green">Attractive</span></td><td>Credit preferred; EM sovereigns at 237bps</td><td class="up">+7.7%</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">BofA FMS Regional Allocations <span class="new-src">NEW · BofA FMS 16 Jun</span></div>
+  <div class="alloc-grid">
+    <div class="alloc-item"><div class="alloc-name">EM Equities</div><div class="alloc-ow ow-pos">Most OW</div><div class="alloc-chg">Top ranked</div></div>
+    <div class="alloc-item"><div class="alloc-name">US Equities</div><div class="alloc-ow ow-pos">+17% OW</div><div class="alloc-chg">↓ from +20%</div></div>
+    <div class="alloc-item"><div class="alloc-name">Japan</div><div class="alloc-ow ow-neg">−5% UW</div><div class="alloc-chg">↓ from +13% OW !</div></div>
+    <div class="alloc-item"><div class="alloc-name">Eurozone</div><div class="alloc-ow ow-neg">−15% UW</div><div class="alloc-chg">Biggest UW since Dec'24</div></div>
+    <div class="alloc-item"><div class="alloc-name">UK</div><div class="alloc-ow ow-neg">−24% UW</div><div class="alloc-chg">Persistent underweight</div></div>
+    <div class="alloc-item"><div class="alloc-name">Global Equities</div><div class="alloc-ow ow-pos">+38% OW</div><div class="alloc-chg">↓ from +50%</div></div>
+  </div>
+  <div class="note">Japan saw a dramatic swing — from +13% OW to −5% UW in one month. Eurozone cut to biggest underweight since Dec '24.</div>
+</div>
+
+<!-- ==================== RISKS ==================== -->
+<div id="tab-risks" class="content">
+
+  <div class="section-title">Key Risks to Monitor <span class="src">UBS CIO + BofA FMS + BofA Flow Show</span></div>
+
+  <div class="risk-row">
+    <div class="risk-label">Loss of confidence in AI story</div>
+    <div class="risk-bar-wrap"><div class="risk-bar" style="width:75%;background:#ef4444;"></div></div>
+    <div class="risk-desc">HIGH — 39% of SPX is AI. 80% of FMS: semis most crowded EVER. 43% say AI is a bubble.</div>
+  </div>
+  <div class="risk-row">
+    <div class="risk-label">2nd wave inflation / Fed hike</div>
+    <div class="risk-bar-wrap"><div class="risk-bar" style="width:78%;background:#ef4444;"></div></div>
+    <div class="risk-desc">HIGH — CPI 4.2% YoY. June 17 FOMC: dot plot hawkish, ~half see hike before year-end. Top FMS risk (34%).</div>
+  </div>
+  <div class="risk-row">
+    <div class="risk-label">Disorderly rise in bond yields</div>
+    <div class="risk-bar-wrap"><div class="risk-bar" style="width:60%;background:#f97316;"></div></div>
+    <div class="risk-desc">MEDIUM-HIGH — 3rd largest FMS tail risk (19%). 2s10s flattening to 25bps (from 75bps).</div>
+  </div>
+  <div class="risk-row">
+    <div class="risk-label">Concentration risk (portfolios)</div>
+    <div class="risk-bar-wrap"><div class="risk-bar" style="width:60%;background:#f97316;"></div></div>
+    <div class="risk-desc">~40% of UBS platform investors hold >50% in ≤10 stocks. Semis OW at all-time FMS record.</div>
+  </div>
+  <div class="risk-row">
+    <div class="risk-label">Mid-cycle rotation risk</div>
+    <div class="risk-bar-wrap"><div class="risk-bar" style="width:55%;background:#f97316;"></div></div>
+    <div class="risk-desc">MEDIUM — BofA Regime in Mid-Cycle. Value 78% success rate vs Growth 67%. Analog: Mar 2000.</div>
+  </div>
+  <div class="risk-row">
+    <div class="risk-label">US political risk (midterms)</div>
+    <div class="risk-bar-wrap"><div class="risk-bar" style="width:45%;background:#eab308;"></div></div>
+    <div class="risk-desc">MEDIUM — 42% expect DEM House/GOP Senate. Blue wave expectations collapsed to 22%.</div>
+  </div>
+  <div class="risk-row">
+    <div class="risk-label">JPY / KRW vol events</div>
+    <div class="risk-bar-wrap"><div class="risk-bar" style="width:30%;background:#22c55e;"></div></div>
+    <div class="risk-desc">LOW-MEDIUM — BoJ hiking to 1.25% Dec, 1.50% Jun '27. Japan UW sharply in FMS.</div>
+  </div>
+  <div class="risk-row">
+    <div class="risk-label">Geopolitical conflict</div>
+    <div class="risk-bar-wrap"><div class="risk-bar" style="width:20%;background:#22c55e;"></div></div>
+    <div class="risk-desc">LOW — Collapsed in FMS to 12% (from 44% two months ago). Iran deal = resolution.</div>
+  </div>
+
+  <div class="section-title">BofA FMS Tail Risk Rankings <span class="new-src">NEW · Jun 16</span></div>
+  <div class="fms-bar-row"><div class="fms-bar-label">2nd wave inflation</div><div class="fms-bar-wrap"><div class="fms-bar-fill" style="width:68%;background:#ef4444;"></div></div><div class="fms-bar-pct down">34%</div></div>
+  <div class="fms-bar-row"><div class="fms-bar-label">AI bubble</div><div class="fms-bar-wrap"><div class="fms-bar-fill" style="width:56%;background:#f97316;"></div></div><div class="fms-bar-pct warn">28%</div></div>
+  <div class="fms-bar-row"><div class="fms-bar-label">Disorderly rise in bond yields</div><div class="fms-bar-wrap"><div class="fms-bar-fill" style="width:38%;background:#f97316;"></div></div><div class="fms-bar-pct warn">19%</div></div>
+  <div class="fms-bar-row"><div class="fms-bar-label">Geopolitical conflict</div><div class="fms-bar-wrap"><div class="fms-bar-fill" style="width:24%;background:#eab308;"></div></div><div class="fms-bar-pct warn">12%</div></div>
+  <div class="fms-bar-row"><div class="fms-bar-label">Private credit</div><div class="fms-bar-wrap"><div class="fms-bar-fill" style="width:8%;background:#94a3b8;"></div></div><div class="fms-bar-pct">4%</div></div>
+  <div class="fms-bar-row"><div class="fms-bar-label">US midterm elections</div><div class="fms-bar-wrap"><div class="fms-bar-fill" style="width:4%;background:#94a3b8;"></div></div><div class="fms-bar-pct">2%</div></div>
+
+  <div class="section-title">What to Watch — Next Catalysts</div>
+  <table>
+    <thead><tr><th>Event</th><th>Date</th><th>Significance</th></tr></thead>
+    <tbody>
+      <tr><td>FOMC (Warsh first meeting)</td><td>17 Jun 2026 ✅</td><td>Hawkish hold confirmed. ~Half see hike before year-end. Dot plot revised up for 2026/27/28. Warsh did not submit projections.</td></tr>
+      <tr><td>UBS CIO Global Livestream</td><td>23 Jun 2026</td><td>Q&amp;A on 2H outlook; market direction update</td></tr>
+      <tr><td>US Midterm Elections</td><td>Nov 2026</td><td>Senate control = macro regime shift risk (BofA). 42% expect DEM House/GOP Senate</td></tr>
+      <tr><td>Fed Next FOMC</td><td>TBD</td><td>Warsh guidance on hikes if CPI remains >4%</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ==================== BofA FLOW SHOW ==================== -->
+<div id="tab-bofa" class="content">
+  <div class="section-title">BofA Flow Show — 8 Jun 2026 <span class="src">Michael Hartnett, BofA Global Research</span></div>
+  <div class="note" style="margin-bottom:12px;">Note: Dated 8 Jun — 8 days prior to BofA FMS. Bull &amp; Bear was rising toward 9.2. For full June FMS survey data (16 Jun), see the BofA FMS tab.</div>
+
+  <div class="section-title">YTD Asset Class Returns — "Scores on the Doors"</div>
+  <div class="score-grid">
+    <div class="score-item"><div class="asset">Commodities</div><div class="ret pos">+38.6%</div></div>
+    <div class="score-item"><div class="asset">Oil</div><div class="ret pos">+33.0%</div></div>
+    <div class="score-item"><div class="asset">ACWI</div><div class="ret pos">+16.1%</div></div>
+    <div class="score-item"><div class="asset">S&amp;P 500</div><div class="ret pos">+9.6%</div></div>
+    <div class="score-item"><div class="asset">US Dollar</div><div class="ret pos">+2.6%</div></div>
+    <div class="score-item"><div class="asset">Cash</div><div class="ret pos">+1.7%</div></div>
+    <div class="score-item"><div class="asset">High Yield</div><div class="ret pos">+1.7%</div></div>
+    <div class="score-item"><div class="asset">IG Credit</div><div class="ret pos">+0.2%</div></div>
+    <div class="score-item"><div class="asset">Govt Bonds</div><div class="ret neg">−1.0%</div></div>
+    <div class="score-item"><div class="asset">Gold</div><div class="ret neg">−2.7%</div></div>
+    <div class="score-item"><div class="asset">Bitcoin</div><div class="ret neg">−28.3%</div></div>
+  </div>
+
+  <div class="section-title">Hartnett's Core Thesis</div>
+  <div class="theme-list">
+    <div class="theme-item">
+      <div class="theme-icon">🏆</div>
+      <div class="theme-body">
+        <div class="title">V for Victory: Iran Done + US AI War Pivot = Boom &amp; Bubble</div>
+        <div class="desc">Iran deal = macro tailwind. US pivots to boom and bubble to win the US-China AI war. AI = 39% of S&P 500 — approaching 1880s railroad bubble peak. Only tech outperformed SPX from Oct '98 to Mar '00 highs.</div>
+      </div>
+    </div>
+    <div class="theme-item">
+      <div class="theme-icon">📈</div>
+      <div class="theme-body">
+        <div class="title">Bull &amp; Bear Indicator: 9.2 — Near/At Sell Signal</div>
+        <div class="desc">B&amp;B rose to 9.2 from 8.9. Scale: 0 = extreme bearish, 10 = extreme bullish/sell. Official SELL signal threshold = 8.0. US household equity wealth up $6tn YTD. Bulls "yippy" if no bounce in Trump approval by September.</div>
+      </div>
+    </div>
+    <div class="theme-item">
+      <div class="theme-icon">⚠️</div>
+      <div class="theme-body">
+        <div class="title">Vigilantes: Warsh + Yield Curve Bear Flattening</div>
+        <div class="desc">Since Warsh Fed appointment (Jan 30): gold peaked, bitcoin −30%, yield curve bear flattened (2s10s: 75bps → 25bps). BofA Investment Clock: "Boom" morphing toward "Stagflation." Only a big oil price drop can arrest the CPI spiral.</div>
+      </div>
+    </div>
+    <div class="theme-item">
+      <div class="theme-icon">🗳️</div>
+      <div class="theme-body">
+        <div class="title">Votes: GOP Senate Risk = Big Macro Regime Shift</div>
+        <div class="desc">Iran deal done is ending the plunge in Trump/economy/inflation approval. GOP losing the Senate in November = "dollar down, yields down, stocks down" event. Booms ended by voters, vigilantes, and vol events (JPY/KRW crises).</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== BofA FMS TAB ==================== -->
+<div id="tab-fms" class="content">
+
+  <div class="section-title">BofA Global Fund Manager Survey — "The Frozen Bulls" <span class="new-src">NEW · 16 Jun 2026</span></div>
+  <div class="note" style="margin-bottom:12px;">172 respondents, $465bn AUM. Conducted 6–12 Jun 2026. Michael Hartnett, Anya Shelekhin, Myung-Jee Jung.</div>
+
+  <!-- KPI Row -->
+  <div class="fms-hero">
+    <div class="fms-kpi">
+      <div class="fk-label">Bull &amp; Bear Indicator</div>
+      <div class="fk-val down">8.9</div>
+      <div class="fk-sub">↑ from 8.9 (FMS) → 9.2 (Flow Show)</div>
+      <div class="fk-signal fk-sig-sell">⚠️ SELL SIGNAL</div>
+    </div>
+    <div class="fms-kpi">
+      <div class="fk-label">Cash Level (% AUM)</div>
+      <div class="fk-val warn">4.1%</div>
+      <div class="fk-sub">↑ from 3.9% (extremely low)</div>
+      <div class="fk-signal fk-sig-neutral">Neutral (sell &lt;4.0%)</div>
+    </div>
+    <div class="fms-kpi">
+      <div class="fk-label">Expect Fed Hike</div>
+      <div class="fk-val down">40%</div>
+      <div class="fk-sub">↑ from 16% in May</div>
+      <div class="fk-signal fk-sig-sell">Highest since Sep '22</div>
+    </div>
+    <div class="fms-kpi">
+      <div class="fk-label">FMS Sentiment Index</div>
+      <div class="fk-val">6.0</div>
+      <div class="fk-sub">↓ from 6.6 last month</div>
+      <div class="fk-signal fk-sig-neutral">Pulling back slightly</div>
+    </div>
+  </div>
+
+  <!-- Bottom line -->
+  <div class="info-banner">
+    <div class="ab-icon">💬</div>
+    <div>
+      <div class="ab-title">FMS Bottom Line (Hartnett)</div>
+      <div class="ab-body">"FMS investors are steadfastly bullish (B&amp;B up to sell signal 8.9), albeit a tad less bullish than in May (cash level up to 4.1% from 3.9%). History of FMS suggests this is not a 'big top' for risk assets (will be signaled by bonds &amp; voters), but traders take summer chips off table. Consumer stocks best contrarian play for 'peace'."</div>
+    </div>
+  </div>
+
+  <!-- Economy & Fed -->
+  <div class="section-title">Macro Outlook — What Fund Managers Expect</div>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Economic Scenario (next 12 months)</h3>
+      <div style="margin-top:6px;">
+        <div class="fms-bar-row" style="background:#f8fafc;"><div class="fms-bar-label">Soft landing</div><div class="fms-bar-wrap"><div class="fms-bar-fill" style="width:94%;background:#22c55e;"></div></div><div class="fms-bar-pct up">47%</div></div>
+        <div class="fms-bar-row" style="background:#f8fafc;"><div class="fms-bar-label">No landing</div><div class="fms-bar-wrap"><div class="fms-bar-fill" style="width:80%;background:#0ea5e9;"></div></div><div class="fms-bar-pct" style="color:#0284c7;">40%</div></div>
+        <div class="fms-bar-row" style="background:#f8fafc;"><div class="fms-bar-label">Hard landing</div><div class="fms-bar-wrap"><div class="fms-bar-fill" style="width:10%;background:#94a3b8;"></div></div><div class="fms-bar-pct">5%</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Investment Clock Regime</h3>
+      <div style="margin-top:6px;">
+        <div class="fms-bar-row" style="background:#f8fafc;"><div class="fms-bar-label">Stagflation</div><div class="fms-bar-wrap"><div class="fms-bar-fill" style="width:100%;background:#f97316;"></div></div><div class="fms-bar-pct warn">58%</div></div>
+        <div class="fms-bar-row" style="background:#f8fafc;"><div class="fms-bar-label">Boom</div><div class="fms-bar-wrap"><div class="fms-bar-fill" style="width:62%;background:#22c55e;"></div></div><div class="fms-bar-pct up">36%</div></div>
+        <div class="fms-bar-row" style="background:#f8fafc;"><div class="fms-bar-label">Goldilocks</div><div class="fms-bar-wrap"><div class="fms-bar-fill" style="width:4%;background:#94a3b8;"></div></div><div class="fms-bar-pct">2%</div></div>
+        <div class="fms-bar-row" style="background:#f8fafc;"><div class="fms-bar-label">Stagnation</div><div class="fms-bar-wrap"><div class="fms-bar-fill" style="width:2%;background:#94a3b8;"></div></div><div class="fms-bar-pct">1%</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="note">58% of FMS investors say "stagflation" but 47% still call for soft landing — internally inconsistent, reflecting genuine macro uncertainty. Stagflation % down from 69% in May as boom picks up.</div>
+
+  <!-- Fed expectations -->
+  <div class="section-title">Fed Rate Expectations (Next 12 Months)</div>
+  <div class="alert-banner">
+    <div class="ab-icon">🏦</div>
+    <div>
+      <div class="ab-title">40% now expect a hike — up from 16% in May. 55% expect hawkish hold from Warsh.</div>
+      <div class="ab-body">28% expect no change. 26% expect 1 hike. 12% expect 2 hikes. 2% expect more than 2 hikes. On the other side: 15% expect 1 cut, 13% expect 2 cuts. Net expectations for higher short-term rates at highest since Sep '22.</div>
+    </div>
+  </div>
+
+  <!-- Most crowded / AI -->
+  <div class="section-title">AI &amp; Crowded Trades</div>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Most Crowded Trade</h3>
+      <div class="fms-bar-row" style="background:#fef2f2; margin-top:8px;"><div class="fms-bar-label" style="color:#991b1b;font-size:12px;">Long global semiconductors</div><div class="fms-bar-wrap"><div class="fms-bar-fill" style="width:100%;background:#ef4444;"></div></div><div class="fms-bar-pct down" style="font-size:14px;">80%</div></div>
+      <div class="note" style="color:#991b1b;">⚠️ All-time record in FMS history (was 73% in May)</div>
+      <div class="fms-bar-row" style="background:#f8fafc; margin-top:6px;"><div class="fms-bar-label">Long Magnificent 7</div><div class="fms-bar-wrap"><div class="fms-bar-fill" style="width:15%;background:#94a3b8;"></div></div><div class="fms-bar-pct">12%</div></div>
+      <div class="fms-bar-row" style="background:#f8fafc;"><div class="fms-bar-label">Long oil</div><div class="fms-bar-wrap"><div class="fms-bar-fill" style="width:5%;background:#94a3b8;"></div></div><div class="fms-bar-pct">4%</div></div>
+    </div>
+    <div class="card">
+      <h3>Is AI in a Bubble?</h3>
+      <div class="fms-bar-row" style="background:#f8fafc; margin-top:8px;"><div class="fms-bar-label">No — not a bubble</div><div class="fms-bar-wrap"><div class="fms-bar-fill" style="width:90%;background:#22c55e;"></div></div><div class="fms-bar-pct up">45%</div></div>
+      <div class="fms-bar-row" style="background:#f8fafc;"><div class="fms-bar-label">Yes — bubble</div><div class="fms-bar-wrap"><div class="fms-bar-fill" style="width:86%;background:#ef4444;"></div></div><div class="fms-bar-pct down">43%</div></div>
+      <div class="note" style="margin-top:8px;">AI cycle stage: 56% say "boom" (FOMO buyers still in), 21% say "euphoria" (price/value danger zone)</div>
+    </div>
+  </div>
+
+  <!-- Asset allocation -->
+  <div class="section-title">Asset Class Allocation Changes</div>
+  <div class="alloc-grid">
+    <div class="alloc-item"><div class="alloc-name">Global Equities</div><div class="alloc-ow ow-pos">+38% OW</div><div class="alloc-chg">↓ from +50% OW</div></div>
+    <div class="alloc-item"><div class="alloc-name">Technology</div><div class="alloc-ow ow-pos">+26% OW</div><div class="alloc-chg">↓ from +33% OW</div></div>
+    <div class="alloc-item"><div class="alloc-name">Bonds</div><div class="alloc-ow ow-neg">−42% UW</div><div class="alloc-chg">↑ slightly from −44%</div></div>
+    <div class="alloc-item"><div class="alloc-name">Commodities</div><div class="alloc-ow ow-pos">+25% OW</div><div class="alloc-chg">↓ from +31% OW</div></div>
+    <div class="alloc-item"><div class="alloc-name">Banks</div><div class="alloc-ow ow-pos">+26% OW</div><div class="alloc-chg">↑ (bought)</div></div>
+    <div class="alloc-item"><div class="alloc-name">Materials</div><div class="alloc-ow ow-pos">+17% OW</div><div class="alloc-chg">↑ from +9% (bought)</div></div>
+    <div class="alloc-item"><div class="alloc-name">Consumer Discretionary</div><div class="alloc-ow ow-neg">−23% UW</div><div class="alloc-chg">↓ from −18%</div></div>
+    <div class="alloc-item"><div class="alloc-name">Consumer Staples</div><div class="alloc-ow ow-neg">−21% UW</div><div class="alloc-chg">↑ from −28% (bought)</div></div>
+    <div class="alloc-item"><div class="alloc-name">Healthcare</div><div class="alloc-ow ow-pos">+14% OW</div><div class="alloc-chg">↑ from +9%</div></div>
+    <div class="alloc-item"><div class="alloc-name">REITs</div><div class="alloc-ow ow-neg">−15% UW</div><div class="alloc-chg">Stable</div></div>
+    <div class="alloc-item"><div class="alloc-name">Gold (valuation)</div><div class="alloc-ow ow-pos">99% say not OV</div><div class="alloc-chg">Only 1% say overvalued</div></div>
+    <div class="alloc-item"><div class="alloc-name">USD (valuation)</div><div class="alloc-ow ow-neg">34% say overvalued</div><div class="alloc-chg">↓ from 50%</div></div>
+  </div>
+
+  <!-- Performance expectations -->
+  <div class="section-title">What Fund Managers Expect to Outperform</div>
+  <table>
+    <thead><tr><th>Style Factor</th><th>Net % Favoring</th><th>vs Last Month</th></tr></thead>
+    <tbody>
+      <tr><td>Large caps vs Small caps</td><td class="up">+54% favor large</td><td>—</td></tr>
+      <tr><td>High quality vs Low quality earnings</td><td class="up">+48% favor high quality</td><td>↓ from +56%</td></tr>
+      <tr><td>High momentum vs Low momentum</td><td class="up">+23% favor high momentum</td><td>↓↓ from +44%</td></tr>
+      <tr><td>High dividend yield</td><td class="up">+5% favor high div</td><td>↑ from +1%</td></tr>
+      <tr><td>High grade vs High yield bonds</td><td>−2% (no strong view)</td><td>—</td></tr>
+      <tr><td>Low volatility</td><td>−2% (no strong view)</td><td>—</td></tr>
+      <tr><td><strong>Growth vs Value</strong></td><td class="warn">+8% favor growth</td><td><strong>Reversed from −14% (value) last month</strong></td></tr>
+    </tbody>
+  </table>
+  <div class="note">The Growth vs Value reversal is notable — last month 14% favored value, now 8% favor growth. Momentum conviction collapsed from 44% to 23%.</div>
+
+  <!-- Midterms -->
+  <div class="section-title">US Midterm Election Expectations</div>
+  <div class="fms-bar-row"><div class="fms-bar-label">DEM House / GOP Senate</div><div class="fms-bar-wrap"><div class="fms-bar-fill" style="width:84%;background:#0ea5e9;"></div></div><div class="fms-bar-pct" style="color:#0284c7;">42%</div></div>
+  <div class="fms-bar-row"><div class="fms-bar-label">DEM House / DEM Senate (Blue Wave)</div><div class="fms-bar-wrap"><div class="fms-bar-fill" style="width:44%;background:#6366f1;"></div></div><div class="fms-bar-pct" style="color:#4338ca;">22%</div></div>
+  <div class="fms-bar-row"><div class="fms-bar-label">GOP House / GOP Senate (Status quo)</div><div class="fms-bar-wrap"><div class="fms-bar-fill" style="width:18%;background:#94a3b8;"></div></div><div class="fms-bar-pct">9%</div></div>
+  <div class="fms-bar-row"><div class="fms-bar-label">GOP House / DEM Senate</div><div class="fms-bar-wrap"><div class="fms-bar-fill" style="width:6%;background:#94a3b8;"></div></div><div class="fms-bar-pct">3%</div></div>
+  <div class="note">Blue Wave expectations collapsed to 22% (from 36% two months ago). Iran deal + Trump approval stabilization driving the shift.</div>
+</div>
+
+<!-- ==================== CONSENSUS TAB ==================== -->
+<div id="tab-consensus" class="content">
+
+  <div class="section-title" style="margin-top:4px;">Where Both Houses Stand — Jun 2026 <span class="src">UBS CIO 19 Jun · BofA Flow Show 8 Jun · BofA FMS 16 Jun · BofA Research 12 Jun</span></div>
+
+  <div class="consensus-hero">
+    <div class="consensus-pill agree">
+      <div class="pill-label">Strong Agreement</div>
+      <div class="pill-count">7</div>
+      <div class="pill-desc">themes where UBS &amp; BofA align</div>
+    </div>
+    <div class="consensus-pill split">
+      <div class="pill-label">Nuanced Split</div>
+      <div class="pill-count">3</div>
+      <div class="pill-desc">same direction, different conviction</div>
+    </div>
+    <div class="consensus-pill disagree">
+      <div class="pill-label">Clear Divergence</div>
+      <div class="pill-count">3</div>
+      <div class="pill-desc">opposite stance or framing</div>
+    </div>
+  </div>
+
+  <div class="dominant-call">
+    <h2>⚡ Dominant Consensus — What Both Agree On</h2>
+    <div class="dc-row">
+      <div class="dc-num">1</div>
+      <div class="dc-text"><strong>AI is the cycle's defining trade</strong> — both houses agree AI capex (~$700bn), US hyperscaler dominance, and Asia AI supply chain are structural. 80% of fund managers say long semis is the most crowded trade ever — everyone's in, everyone agrees.</div>
+    </div>
+    <div class="dc-row">
+      <div class="dc-num">2</div>
+      <div class="dc-text"><strong>Overweight equities (led by US &amp; Asia) — but with rising caution</strong> — UBS targets S&P 8,200; BofA's B&B at 8.9–9.2 signals a sell but not a crash. Fund managers cut equity OW from 50% to 38%. Both houses say hold on, but start diversifying.</div>
+    </div>
+    <div class="dc-row">
+      <div class="dc-num">3</div>
+      <div class="dc-text"><strong>Commodities outperform bonds</strong> — BofA: commodities +38.6% YTD; fund managers still 25% OW. UBS targets Brent at $105. Both flag energy and broad commodity indices as preferred.</div>
+    </div>
+    <div class="dc-row">
+      <div class="dc-num">4</div>
+      <div class="dc-text"><strong>Fed is the key risk</strong> — CPI at 4.2% YoY (highest Apr '23), Warsh hawkish. 40% of fund managers now expect a hike. UBS still calls for soft landing + cuts in 2027. Both agree Warsh is a wildcard.</div>
+    </div>
+    <div class="dc-row">
+      <div class="dc-num">5</div>
+      <div class="dc-text"><strong>Iran deal = near-term macro tailwind</strong> — BofA: "V for Victory." UBS: buy energy on dips. Fund managers pre-deal expected oil at $86/bbl by year-end; UBS sees $105 by Sep. Unanimous on direction.</div>
+    </div>
+  </div>
+
+  <div class="section-title">Signal-by-Signal: UBS vs BofA (updated with FMS data)</div>
+
+  <div class="signal-bar">
+    <div class="signal-label">US Equities</div>
+    <div class="signal-icons">
+      <span class="signal-tag bull">UBS: Attractive, 8,200</span>
+      <span class="signal-tag caution">BofA FMS: B&B 8.9 = SELL ⚠️</span>
+    </div>
+    <div class="signal-note">Same bullish direction, but BofA's sell signal is flashing. FMS cut equity OW from 50%→38%. UBS doesn't acknowledge the sell signal.</div>
+  </div>
+  <div class="signal-bar">
+    <div class="signal-label">AI / Semis</div>
+    <div class="signal-icons">
+      <span class="signal-tag bull">UBS: Core OW</span>
+      <span class="signal-tag caution">BofA: 80% crowded — record</span>
+    </div>
+    <div class="signal-note">Both bullish on AI structurally, but BofA's 80% crowded reading is a warning — historically crowded trades revert.</div>
+  </div>
+  <div class="signal-bar">
+    <div class="signal-label">Value vs Growth</div>
+    <div class="signal-icons">
+      <span class="signal-tag neutral">UBS: Broaden rally</span>
+      <span class="signal-tag caution">BofA Quant: Mid-Cycle → Buy Value</span>
+    </div>
+    <div class="signal-note">BofA's Regime Indicator says mid-cycle = sell mega tech, buy value (78% success rate). UBS says diversify but doesn't rotate out of tech.</div>
+  </div>
+  <div class="signal-bar">
+    <div class="signal-label">Fed / Rates</div>
+    <div class="signal-icons">
+      <span class="signal-tag neutral">UBS: On hold → cuts 2027</span>
+      <span class="signal-tag bear">BofA: 40% expect hike</span>
+    </div>
+    <div class="signal-note">Biggest divergence. CPI 4.2% YoY strengthens BofA's hawkish case. UBS still in soft landing camp but the data is moving against them.</div>
+  </div>
+  <div class="signal-bar">
+    <div class="signal-label">Commodities</div>
+    <div class="signal-icons">
+      <span class="signal-tag bull">UBS: Attractive</span>
+      <span class="signal-tag bull">BofA: +38.6% YTD, 25% OW</span>
+    </div>
+    <div class="signal-note">Strong agreement. Both flag energy and broad commodity indices as preferred allocations.</div>
+  </div>
+  <div class="signal-bar">
+    <div class="signal-label">Gold</div>
+    <div class="signal-icons">
+      <span class="signal-tag bull">UBS: $5,200 target</span>
+      <span class="signal-tag neutral">BofA FMS: 1% say overvalued</span>
+    </div>
+    <div class="signal-note">FMS shows only 1% say gold is overvalued (lowest Feb'24). Despite gold's Warsh-driven selloff, fund managers don't see it as expensive. UBS structurally bullish.</div>
+  </div>
+  <div class="signal-bar">
+    <div class="signal-label">Government Bonds</div>
+    <div class="signal-icons">
+      <span class="signal-tag neutral">UBS: Lock in short-mid IG</span>
+      <span class="signal-tag bear">BofA: Bonds −1% YTD, 42% UW</span>
+    </div>
+    <div class="signal-note">Both cautious on duration. Fund managers are 42% underweight bonds — well below average.</div>
+  </div>
+  <div class="signal-bar">
+    <div class="signal-label">Macro Regime</div>
+    <div class="signal-icons">
+      <span class="signal-tag bull">UBS: Soft landing</span>
+      <span class="signal-tag bear">BofA: 58% stagflation</span>
+    </div>
+    <div class="signal-note">Key divergence. UBS: disinflation in 2H, cuts begin 2027. BofA FMS: 58% expect stagflation, Boom morphing. CPI 4.2% YoY supports BofA's view.</div>
+  </div>
+  <div class="signal-bar">
+    <div class="signal-label">Concentration Risk</div>
+    <div class="signal-icons">
+      <span class="signal-tag caution">UBS: Diversify portfolios</span>
+      <span class="signal-tag bear">BofA: 80% semis crowded = bubble risk</span>
+    </div>
+    <div class="signal-note">Both flag it. BofA uses a historical bubble analog (1880s railroads). UBS frames it as a portfolio action item.</div>
+  </div>
+  <div class="signal-bar">
+    <div class="signal-label">US Midterms</div>
+    <div class="signal-icons">
+      <span class="signal-tag neutral">UBS: Monitoring</span>
+      <span class="signal-tag bear">BofA: 42% DEM House/GOP Senate</span>
+    </div>
+    <div class="signal-note">Blue wave fears collapsed (22% from 36%). But BofA still flags GOP Senate loss scenario as a major macro regime shift risk.</div>
+  </div>
+
+  <div class="section-title">Head-to-Head: Key Views (Updated)</div>
+  <table class="vs-table">
+    <thead>
+      <tr>
+        <th>Topic</th>
+        <th class="ubs-head">🔴 UBS CIO (19 Jun)</th>
+        <th class="verdict-head">Verdict</th>
+        <th class="bofa-head">🟢 BofA (FMS 16 Jun + Flow Show 8 Jun)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>US Equities</td>
+        <td class="ubs-col">Attractive. S&P 8,200 by Jun '27.</td>
+        <td class="verdict-col"><span class="badge badge-yellow">Split</span></td>
+        <td class="bofa-col">B&B 8.9 = official sell signal. FMS cut equity OW from 50%→38%. Near-term caution.</td>
+      </tr>
+      <tr>
+        <td>AI / Semis</td>
+        <td class="ubs-col">$700bn capex; Asia supply chain 72% EPS growth. Diversify within AI.</td>
+        <td class="verdict-col"><span class="badge badge-yellow">Split</span></td>
+        <td class="bofa-col">Structurally bullish but 80% most crowded trade EVER. 43% say bubble. Mid-cycle rotation away from mega tech.</td>
+      </tr>
+      <tr>
+        <td>Fed Path</td>
+        <td class="ubs-col">On hold; markets too hawkish. First cut Mar '27.</td>
+        <td class="verdict-col"><span class="badge badge-red">Differ</span></td>
+        <td class="bofa-col">FOMC June 17 confirmed hawkish hold. ~Half of FOMC members see hike before year-end. Dot plot revised higher across 2026/27/28. Warsh did not submit projections. BofA's hawkish call vindicated.</td>
+      </tr>
+      <tr>
+        <td>Commodities</td>
+        <td class="ubs-col">Attractive. Energy dip = entry. Oil to $105 Sep.</td>
+        <td class="verdict-col"><span class="badge badge-green">Agree</span></td>
+        <td class="bofa-col">+38.6% YTD top asset. 25% OW among FMS. Iran deal = tailwind.</td>
+      </tr>
+      <tr>
+        <td>Growth vs Value</td>
+        <td class="ubs-col">Broaden rally. No explicit sector rotation call.</td>
+        <td class="verdict-col"><span class="badge badge-red">Differ</span></td>
+        <td class="bofa-col">Mid-Cycle = sell mega tech, buy value. Value 78% success rate in this phase. March 2000 analog.</td>
+      </tr>
+      <tr>
+        <td>Macro Regime</td>
+        <td class="ubs-col">Soft landing. Disinflation in 2H26. Cuts in 2027.</td>
+        <td class="verdict-col"><span class="badge badge-red">Differ</span></td>
+        <td class="bofa-col">58% stagflation. Investment Clock: Boom → Stagflation. CPI 4.2% YoY gives this real weight.</td>
+      </tr>
+      <tr>
+        <td>Gold</td>
+        <td class="ubs-col">$4,600 Dec '26; $5,200 Jun '27. Structurally bullish.</td>
+        <td class="verdict-col"><span class="badge badge-yellow">Split</span></td>
+        <td class="bofa-col">Only 1% of FMS say overvalued (Feb'24 low). Not expensive, but gold peaked post-Warsh.</td>
+      </tr>
+      <tr>
+        <td>Asia / EM</td>
+        <td class="ubs-col">Attractive. Korea +100%, MSCI China +21% target.</td>
+        <td class="verdict-col"><span class="badge badge-green">Agree</span></td>
+        <td class="bofa-col">EM most OW in FMS. ACWI +16.1% YTD. EM broadly overweight.</td>
+      </tr>
+      <tr>
+        <td>Japan</td>
+        <td class="ubs-col">Constructive. Nikkei +40% YTD. Iran deal positive.</td>
+        <td class="verdict-col"><span class="badge badge-red">Differ</span></td>
+        <td class="bofa-col">Dramatic FMS reversal: +13% OW → −5% UW in one month. Major rotation out.</td>
+      </tr>
+      <tr>
+        <td>Iran Deal</td>
+        <td class="ubs-col">Dip in oil = buy energy exposure.</td>
+        <td class="verdict-col"><span class="badge badge-green">Agree</span></td>
+        <td class="bofa-col">"V for Victory." FMS oil target $86/bbl by year-end (pre-deal).</td>
+      </tr>
+      <tr>
+        <td>Concentration Risk</td>
+        <td class="ubs-col">Portfolio action needed. 40% investors too concentrated.</td>
+        <td class="verdict-col"><span class="badge badge-green">Agree</span></td>
+        <td class="bofa-col">80% semis crowded = all-time record. 28% say AI bubble. Railroad analog 1880s.</td>
+      </tr>
+      <tr>
+        <td>Intel / Semis stocks</td>
+        <td class="ubs-col">Not covered specifically.</td>
+        <td class="verdict-col"><span class="badge badge-gray">N/A</span></td>
+        <td class="bofa-col">INTC double-upgraded to Buy ($135). Agentic CPU TAM $170bn+. Also bullish NVDA, CRDO, ADI, TXN, KLAC, MCHP.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="note" style="margin-top:8px;">Key update from new reports: BofA's mid-cycle rotation call (Value over Growth, sell mega tech) now diverges more sharply from UBS. Japan also flipped — UBS constructive, FMS dramatically cut Japan to UW. The stagflation vs soft landing debate is the central macro question heading into 2H26.</div>
+</div>
+
+<!-- ═══════════════ SCENARIOS TAB ═══════════════ -->
+<div id="tab-scenarios" class="content">
+
+  <div class="info-banner" style="margin-bottom:14px;">
+    <div class="ab-icon">📍</div>
+    <div>
+      <div class="ab-title">Current Macro Reading — Jun 2026</div>
+      <div class="ab-body">CPI 4.2% YoY (May 2026) · Fed funds 3.50–3.75%, hawkish hold, ~40% FOMC members see hike before year-end · Dot plot revised higher for 2026/27/28 · Warsh era began Jun 17. Defaults below reflect this environment.</div>
+    </div>
+  </div>
+
+  <!-- INPUTS -->
+  <div class="sc-inputs">
+    <div class="sc-input-group">
+      <label>CPI (YoY)</label>
+      <select id="sc-cpi" onchange="runScenario()">
+        <option value="below2">Below 2%</option>
+        <option value="2to3">2 – 3%</option>
+        <option value="3to4">3 – 4%</option>
+        <option value="above4" selected>Above 4% ← current</option>
+      </select>
+    </div>
+    <div class="sc-input-group">
+      <label>Unemployment</label>
+      <select id="sc-unemp" onchange="runScenario()">
+        <option value="falling">Falling (tightening)</option>
+        <option value="stable" selected>Stable ← current</option>
+        <option value="rising">Rising (loosening)</option>
+      </select>
+    </div>
+    <div class="sc-input-group">
+      <label>GDP Growth</label>
+      <select id="sc-gdp" onchange="runScenario()">
+        <option value="strong">Strong (&gt;3%)</option>
+        <option value="moderate" selected>Moderate 1.5–3% ← current</option>
+        <option value="weak">Weak 0–1.5%</option>
+        <option value="contraction">Contraction (&lt;0%)</option>
+      </select>
+    </div>
+    <div class="sc-input-group">
+      <label>Fed Stance</label>
+      <select id="sc-fed" onchange="runScenario()">
+        <option value="cutting">Cutting</option>
+        <option value="dovish">On Hold (Dovish)</option>
+        <option value="hawkish" selected>On Hold (Hawkish) ← current</option>
+        <option value="hiking">Hiking</option>
+      </select>
+    </div>
+  </div>
+
+  <button class="sc-reset" onclick="resetToCurrentMacro()">↺ Reset to current macro</button>
+
+  <!-- REGIME OUTPUT BANNER -->
+  <div id="regime-banner" class="regime-banner"></div>
+
+  <!-- THREE-COLUMN BODY -->
+  <div class="sc-body">
+    <!-- Fed probability widget -->
+    <div class="sc-prob-box">
+      <div class="pb-label">Fed Hike Probability<br><span style="font-size:9px;font-weight:400;">next 12 months</span></div>
+      <div id="hike-val" class="pb-val">–</div>
+      <div class="pb-sub">probability</div>
+      <div class="pb-bar-wrap"><div id="hike-bar" class="pb-bar" style="width:0%"></div></div>
+      <div class="sc-prob-row">
+        <span class="pr-name">Hold</span>
+        <span id="hold-pct" class="pr-pct">–</span>
+      </div>
+      <div class="sc-prob-row">
+        <span class="pr-name">Cut</span>
+        <span id="cut-pct" class="pr-pct">–</span>
+      </div>
+      <div style="margin-top:10px; padding-top:10px; border-top:1px solid #f1f5f9;">
+        <div style="font-size:10px;color:#64748b;margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Implied 10Y Yield Range</div>
+        <div id="yield-range" style="font-size:13px;font-weight:700;color:#0f172a;"></div>
+      </div>
+      <div style="margin-top:8px;">
+        <div style="font-size:10px;color:#64748b;margin-bottom:4px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Recession Risk</div>
+        <div id="rec-risk" style="font-size:13px;font-weight:700;"></div>
+      </div>
+    </div>
+
+    <!-- Asset class signals -->
+    <div class="sc-assets">
+      <h4>Asset Class Signals in this Regime</h4>
+      <div id="sc-asset-list"></div>
+    </div>
+
+    <!-- Research alignment -->
+    <div class="sc-alignment">
+      <h4>Research House Alignment</h4>
+      <div id="sc-alignment-content"></div>
+    </div>
+  </div>
+
+  <!-- QUILT -->
+  <div class="section-title" style="margin-top:18px;">Asset Class Quilt · 2006–2025 · Callan Periodic Table of Investment Returns</div>
+  <div class="note" style="margin-bottom:8px;">Ranked best→worst each year. ★ years match the selected macro regime above. Dot colour = asset class.</div>
+  <div id="quilt-container" class="quilt-wrap"></div>
+
+</div><!-- end scenarios tab -->
+
+<script>
+/* ── Quilt Data (Callan LLC © 2026) ── */
+const QUILT_RANKED = {"2006":[{"key":"re","name":"Real Est","ret":42.12},{"key":"em","name":"Emg Mkt","ret":32.17},{"key":"dev","name":"Dev ex-US","ret":25.71},{"key":"sc","name":"Sm Cap","ret":18.37},{"key":"lc","name":"Lg Cap","ret":15.79},{"key":"hy","name":"High Yld","ret":11.85},{"key":"gf","name":"Gbl Fxd","ret":8.16},{"key":"ca","name":"Cash","ret":4.85},{"key":"uf","name":"US Fxd","ret":4.33}],"2007":[{"key":"em","name":"Emg Mkt","ret":39.38},{"key":"dev","name":"Dev ex-US","ret":12.44},{"key":"gf","name":"Gbl Fxd","ret":11.03},{"key":"uf","name":"US Fxd","ret":6.97},{"key":"lc","name":"Lg Cap","ret":5.49},{"key":"ca","name":"Cash","ret":5.0},{"key":"hy","name":"High Yld","ret":1.87},{"key":"sc","name":"Sm Cap","ret":-1.57},{"key":"re","name":"Real Est","ret":-7.39}],"2008":[{"key":"uf","name":"US Fxd","ret":5.24},{"key":"gf","name":"Gbl Fxd","ret":4.39},{"key":"ca","name":"Cash","ret":2.06},{"key":"hy","name":"High Yld","ret":-26.16},{"key":"sc","name":"Sm Cap","ret":-33.79},{"key":"lc","name":"Lg Cap","ret":-37.0},{"key":"dev","name":"Dev ex-US","ret":-43.56},{"key":"re","name":"Real Est","ret":-48.21},{"key":"em","name":"Emg Mkt","ret":-53.33}],"2009":[{"key":"em","name":"Emg Mkt","ret":78.51},{"key":"hy","name":"High Yld","ret":58.21},{"key":"re","name":"Real Est","ret":37.13},{"key":"dev","name":"Dev ex-US","ret":33.67},{"key":"sc","name":"Sm Cap","ret":27.17},{"key":"lc","name":"Lg Cap","ret":26.47},{"key":"gf","name":"Gbl Fxd","ret":7.53},{"key":"uf","name":"US Fxd","ret":5.93},{"key":"ca","name":"Cash","ret":0.21}],"2010":[{"key":"sc","name":"Sm Cap","ret":26.85},{"key":"re","name":"Real Est","ret":19.63},{"key":"em","name":"Emg Mkt","ret":18.88},{"key":"hy","name":"High Yld","ret":15.12},{"key":"lc","name":"Lg Cap","ret":15.06},{"key":"dev","name":"Dev ex-US","ret":8.95},{"key":"uf","name":"US Fxd","ret":6.54},{"key":"gf","name":"Gbl Fxd","ret":4.95},{"key":"ca","name":"Cash","ret":0.13}],"2011":[{"key":"uf","name":"US Fxd","ret":7.84},{"key":"hy","name":"High Yld","ret":4.98},{"key":"gf","name":"Gbl Fxd","ret":4.36},{"key":"lc","name":"Lg Cap","ret":2.11},{"key":"ca","name":"Cash","ret":0.1},{"key":"sc","name":"Sm Cap","ret":-4.18},{"key":"re","name":"Real Est","ret":-6.46},{"key":"dev","name":"Dev ex-US","ret":-12.21},{"key":"em","name":"Emg Mkt","ret":-18.42}],"2012":[{"key":"re","name":"Real Est","ret":27.73},{"key":"em","name":"Emg Mkt","ret":18.23},{"key":"dev","name":"Dev ex-US","ret":16.41},{"key":"sc","name":"Sm Cap","ret":16.35},{"key":"lc","name":"Lg Cap","ret":16.0},{"key":"hy","name":"High Yld","ret":15.81},{"key":"uf","name":"US Fxd","ret":4.21},{"key":"gf","name":"Gbl Fxd","ret":4.09},{"key":"ca","name":"Cash","ret":0.11}],"2013":[{"key":"sc","name":"Sm Cap","ret":38.82},{"key":"lc","name":"Lg Cap","ret":32.39},{"key":"dev","name":"Dev ex-US","ret":21.02},{"key":"hy","name":"High Yld","ret":7.44},{"key":"re","name":"Real Est","ret":3.67},{"key":"ca","name":"Cash","ret":0.07},{"key":"uf","name":"US Fxd","ret":-2.02},{"key":"em","name":"Emg Mkt","ret":-2.6},{"key":"gf","name":"Gbl Fxd","ret":-3.08}],"2014":[{"key":"re","name":"Real Est","ret":15.02},{"key":"lc","name":"Lg Cap","ret":13.69},{"key":"uf","name":"US Fxd","ret":5.97},{"key":"sc","name":"Sm Cap","ret":4.89},{"key":"hy","name":"High Yld","ret":2.45},{"key":"ca","name":"Cash","ret":0.03},{"key":"em","name":"Emg Mkt","ret":-2.19},{"key":"gf","name":"Gbl Fxd","ret":-3.09},{"key":"dev","name":"Dev ex-US","ret":-4.32}],"2015":[{"key":"lc","name":"Lg Cap","ret":1.38},{"key":"uf","name":"US Fxd","ret":0.55},{"key":"ca","name":"Cash","ret":0.05},{"key":"re","name":"Real Est","ret":-0.79},{"key":"dev","name":"Dev ex-US","ret":-3.04},{"key":"sc","name":"Sm Cap","ret":-4.41},{"key":"hy","name":"High Yld","ret":-4.47},{"key":"gf","name":"Gbl Fxd","ret":-6.02},{"key":"em","name":"Emg Mkt","ret":-14.92}],"2016":[{"key":"sc","name":"Sm Cap","ret":21.31},{"key":"hy","name":"High Yld","ret":17.13},{"key":"lc","name":"Lg Cap","ret":11.96},{"key":"em","name":"Emg Mkt","ret":11.19},{"key":"re","name":"Real Est","ret":4.06},{"key":"dev","name":"Dev ex-US","ret":2.75},{"key":"uf","name":"US Fxd","ret":2.65},{"key":"gf","name":"Gbl Fxd","ret":1.49},{"key":"ca","name":"Cash","ret":0.33}],"2017":[{"key":"em","name":"Emg Mkt","ret":37.28},{"key":"dev","name":"Dev ex-US","ret":24.21},{"key":"lc","name":"Lg Cap","ret":21.83},{"key":"sc","name":"Sm Cap","ret":14.65},{"key":"gf","name":"Gbl Fxd","ret":10.51},{"key":"re","name":"Real Est","ret":10.36},{"key":"hy","name":"High Yld","ret":7.5},{"key":"uf","name":"US Fxd","ret":3.54},{"key":"ca","name":"Cash","ret":0.86}],"2018":[{"key":"ca","name":"Cash","ret":1.87},{"key":"uf","name":"US Fxd","ret":0.01},{"key":"hy","name":"High Yld","ret":-2.08},{"key":"gf","name":"Gbl Fxd","ret":-2.15},{"key":"lc","name":"Lg Cap","ret":-4.38},{"key":"re","name":"Real Est","ret":-5.63},{"key":"sc","name":"Sm Cap","ret":-11.01},{"key":"dev","name":"Dev ex-US","ret":-14.09},{"key":"em","name":"Emg Mkt","ret":-14.57}],"2019":[{"key":"lc","name":"Lg Cap","ret":31.49},{"key":"sc","name":"Sm Cap","ret":25.52},{"key":"dev","name":"Dev ex-US","ret":22.49},{"key":"re","name":"Real Est","ret":21.91},{"key":"em","name":"Emg Mkt","ret":18.44},{"key":"hy","name":"High Yld","ret":14.32},{"key":"uf","name":"US Fxd","ret":8.72},{"key":"gf","name":"Gbl Fxd","ret":5.09},{"key":"ca","name":"Cash","ret":2.28}],"2020":[{"key":"sc","name":"Sm Cap","ret":19.96},{"key":"lc","name":"Lg Cap","ret":18.4},{"key":"em","name":"Emg Mkt","ret":18.31},{"key":"gf","name":"Gbl Fxd","ret":10.11},{"key":"dev","name":"Dev ex-US","ret":7.59},{"key":"uf","name":"US Fxd","ret":7.51},{"key":"hy","name":"High Yld","ret":7.11},{"key":"ca","name":"Cash","ret":0.67},{"key":"re","name":"Real Est","ret":-9.04}],"2021":[{"key":"lc","name":"Lg Cap","ret":28.71},{"key":"re","name":"Real Est","ret":26.09},{"key":"sc","name":"Sm Cap","ret":14.82},{"key":"dev","name":"Dev ex-US","ret":12.62},{"key":"hy","name":"High Yld","ret":5.28},{"key":"ca","name":"Cash","ret":0.05},{"key":"uf","name":"US Fxd","ret":-1.54},{"key":"em","name":"Emg Mkt","ret":-2.54},{"key":"gf","name":"Gbl Fxd","ret":-7.05}],"2022":[{"key":"ca","name":"Cash","ret":1.46},{"key":"hy","name":"High Yld","ret":-11.19},{"key":"uf","name":"US Fxd","ret":-13.01},{"key":"dev","name":"Dev ex-US","ret":-14.29},{"key":"lc","name":"Lg Cap","ret":-18.11},{"key":"gf","name":"Gbl Fxd","ret":-18.7},{"key":"em","name":"Emg Mkt","ret":-20.09},{"key":"sc","name":"Sm Cap","ret":-20.44},{"key":"re","name":"Real Est","ret":-25.1}],"2023":[{"key":"lc","name":"Lg Cap","ret":26.29},{"key":"dev","name":"Dev ex-US","ret":17.94},{"key":"sc","name":"Sm Cap","ret":16.93},{"key":"hy","name":"High Yld","ret":13.44},{"key":"em","name":"Emg Mkt","ret":9.83},{"key":"re","name":"Real Est","ret":9.67},{"key":"gf","name":"Gbl Fxd","ret":5.72},{"key":"uf","name":"US Fxd","ret":5.53},{"key":"ca","name":"Cash","ret":5.01}],"2024":[{"key":"lc","name":"Lg Cap","ret":25.02},{"key":"sc","name":"Sm Cap","ret":11.54},{"key":"hy","name":"High Yld","ret":8.19},{"key":"em","name":"Emg Mkt","ret":7.5},{"key":"ca","name":"Cash","ret":5.25},{"key":"dev","name":"Dev ex-US","ret":4.7},{"key":"uf","name":"US Fxd","ret":1.25},{"key":"re","name":"Real Est","ret":0.94},{"key":"gf","name":"Gbl Fxd","ret":-4.22}],"2025":[{"key":"em","name":"Emg Mkt","ret":33.57},{"key":"dev","name":"Dev ex-US","ret":31.85},{"key":"lc","name":"Lg Cap","ret":17.88},{"key":"sc","name":"Sm Cap","ret":12.81},{"key":"re","name":"Real Est","ret":9.58},{"key":"gf","name":"Gbl Fxd","ret":8.85},{"key":"hy","name":"High Yld","ret":8.62},{"key":"uf","name":"US Fxd","ret":7.3},{"key":"ca","name":"Cash","ret":4.18}]};
+
+const CLASS_COLORS = {lc:'#2563EB',sc:'#1d4ed8',dev:'#0891b2',em:'#dc2626',re:'#7c3aed',hy:'#ea580c',uf:'#16a34a',gf:'#059669',ca:'#6b7280'};
+const CLASS_LABELS = {lc:'Lg Cap',sc:'Sm Cap',dev:'Dev ex-US',em:'Emg Mkt',re:'Real Est',hy:'High Yld',uf:'US Fxd',gf:'Gbl Fxd',ca:'Cash'};
+const RANK_STYLES = [{bg:'#166534',fg:'#fff'},{bg:'#15803d',fg:'#fff'},{bg:'#4ade80',fg:'#14532d'},{bg:'#bbf7d0',fg:'#14532d'},{bg:'#fef9c3',fg:'#713f12'},{bg:'#fde68a',fg:'#713f12'},{bg:'#f97316',fg:'#fff'},{bg:'#ef4444',fg:'#fff'},{bg:'#991b1b',fg:'#fff'}];
+
+function renderQuilt(highlightYears) {
+  const hl = new Set(highlightYears || []);
+  const years = Object.keys(QUILT_RANKED).sort();
+  let h = '<table class="quilt-table"><tr><th></th>';
+  for (const yr of years) {
+    h += `<th class="${hl.has(yr)?'hl-yr':''}">${yr}${hl.has(yr)?' ★':''}</th>`;
+  }
+  h += '</tr>';
+  for (let r = 0; r < 9; r++) {
+    h += `<tr><td class="rank-lbl">${r+1}</td>`;
+    for (const yr of years) {
+      const c = QUILT_RANKED[yr][r];
+      const s = RANK_STYLES[r];
+      const dot = CLASS_COLORS[c.key] || '#94a3b8';
+      const ret = (c.ret >= 0 ? '+' : '') + c.ret.toFixed(1) + '%';
+      h += `<td class="q-cell${hl.has(yr)?' hl':''}" style="background:${s.bg};color:${s.fg};">
+        <div class="q-name">${c.name}</div>
+        <div class="q-ret">${ret}</div>
+        <div class="q-dot" style="background:${dot};"></div>
+      </td>`;
+    }
+    h += '</tr>';
+  }
+  h += '</table>';
+  h += '<div class="quilt-legend">';
+  for (const [k,color] of Object.entries(CLASS_COLORS)) {
+    h += `<span><span class="ql-dot" style="background:${color}"></span>${CLASS_LABELS[k]}</span>`;
+  }
+  h += '</div>';
+  h += '<div style="margin-top:5px;font-size:10px;color:#94a3b8;">★ = years matching selected macro regime. Source: Callan LLC Periodic Table of Investment Returns © 2026.</div>';
+  document.getElementById('quilt-container').innerHTML = h;
+}
+
+const REGIMES = {
+  goldilocks: {
+    label: 'Macro Regime',
+    name: 'Goldilocks',
+    color: '#15803d',
+    bg: '#dcfce7',
+    border: '#86efac',
+    desc: 'Low inflation with healthy growth and a supportive (or neutral) Fed. The optimal environment for risk assets. Equities, EM, and high yield lead; defensive assets and cash lag. Broad-based bull market with low volatility.',
+    years: ['2013','2014','2017','2019','2024'],
+    highlightYears: ['2013','2014','2017','2019','2024'],
+    hikeProb: 4, holdProb: 28, cutProb: 68,
+    yieldRange: '3.5 – 4.2%',
+    recRisk: 'Low (~8%)',
+    recColor: '#15803d',
+    assets: [
+      ['US Large Cap','bull'],['US Small Cap','bull'],['Dev. Markets','bull'],
+      ['Emerg. Markets','bull'],['US Bonds','neutral'],['High Yield','bull'],
+      ['Gold','neutral'],['Commodities','neutral'],['REITs','bull'],['Cash','bear']
+    ],
+    ubsAlign: 'strong', ubsChip: 'Well Aligned',
+    ubsText: 'UBS S&P 8,200 target by Jun \'27 is the base case here. Disinflation in 2H26 is the required catalyst. "Balanced portfolio" and AI thematic calls both work in Goldilocks.',
+    bofaAlign: 'partial', bofaChip: 'Conditionally Aligned',
+    bofaText: 'BofA would flip constructive: B&B back below 8.0 triggers a buy signal. FMS managers would restore equity OW. AI trade rehabilitated. Requires CPI to break below 3%.'
+  },
+  lateCycle: {
+    label: 'Macro Regime',
+    name: 'Late Cycle / Boom',
+    color: '#d97706',
+    bg: '#fef9c3',
+    border: '#fbbf24',
+    desc: 'Growth still solid but inflation is building and the Fed is tightening or neutral-to-hawkish. Historically associated with value outperforming growth, commodity strength, and widening credit spreads. The rally broadens but mega-cap leadership fades.',
+    years: ['2006','2007','2018','2021','2023'],
+    highlightYears: ['2006','2007','2018','2021','2023'],
+    hikeProb: 28, holdProb: 52, cutProb: 20,
+    yieldRange: '4.0 – 5.0%',
+    recRisk: 'Moderate (~20%)',
+    recColor: '#d97706',
+    assets: [
+      ['US Large Cap','neutral'],['US Small Cap','neutral'],['Dev. Markets','neutral'],
+      ['Emerg. Markets','bull'],['US Bonds','bear'],['High Yield','neutral'],
+      ['Gold','neutral'],['Commodities','bull'],['REITs','neutral'],['Cash','neutral']
+    ],
+    ubsAlign: 'partial', ubsChip: 'Partially Aligned',
+    ubsText: 'UBS broadening rally and commodity OW fit late-cycle dynamics. However UBS doesn\'t explicitly call Value over Growth — their S&P 8,200 target remains bullish on equities broadly rather than rotating within.',
+    bofaAlign: 'strong', bofaChip: 'Well Aligned',
+    bofaText: 'BofA\'s mid-cycle rotation call is textbook late-cycle positioning: sell mega-tech (80% crowded), buy Value (78% success rate historically), OW commodities, reduce duration. Intel upgrade (INTC Buy, $135) fits cyclical value rotation.'
+  },
+  highInflation: {
+    label: 'Macro Regime — ⚠️ Current Environment',
+    name: 'High Inflation / Hawkish Hold',
+    color: '#c2410c',
+    bg: '#ffedd5',
+    border: '#fb923c',
+    desc: 'CPI above 4% with the Fed holding at restrictive rates or signalling hikes. Growth still positive but real yields rise, multiples compress, and duration risk is punished. Real assets outperform financial assets. This is the Jun 2026 baseline: CPI 4.2%, Fed 3.50–3.75%, Warsh hawkish hold.',
+    years: ['2022 (H1)','2007–08 transition','1979–80 analog'],
+    highlightYears: ['2022','2007','2008'],
+    hikeProb: 45, holdProb: 48, cutProb: 7,
+    yieldRange: '4.5 – 5.5%',
+    recRisk: 'Elevated (~30%)',
+    recColor: '#c2410c',
+    assets: [
+      ['US Large Cap','caution'],['US Small Cap','bear'],['Dev. Markets','caution'],
+      ['Emerg. Markets','caution'],['US Bonds','bear'],['High Yield','bear'],
+      ['Gold','bull'],['Commodities','bull'],['REITs','bear'],['Cash','bull']
+    ],
+    ubsAlign: 'weak', ubsChip: 'Partially Misaligned',
+    ubsText: 'UBS equity upside (S&P 8,200) requires disinflation that hasn\'t started. "Lock in yields" call is correct — IG bonds at 5%+ make sense. But the full-bull equity stance carries material downside risk if inflation stays sticky above 4%.',
+    bofaAlign: 'strong', bofaChip: 'Well Aligned',
+    bofaText: 'BofA is best-positioned for this regime: B&B 8.9 sell signal is active, equity OW cut 50%→38%, duration underweight, OW commodities (+38.6% YTD). Stagflation base case (58% of FMS) and Investment Clock moving Boom→Stagflation are both regime-appropriate.'
+  },
+  stagflation: {
+    label: 'Macro Regime — 🔴 Bear Case',
+    name: 'Stagflation',
+    color: '#991b1b',
+    bg: '#fee2e2',
+    border: '#f87171',
+    desc: 'High inflation combined with stalling growth or rising unemployment. The worst macro combination for financial assets — the Fed cannot cut (inflation too high) but growth needs support. No good hiding place except real assets and cash. The 1973–74 and 2022 full-year templates.',
+    years: ['1973–74','1979–80','2022 (full year)'],
+    highlightYears: ['2022'],
+    hikeProb: 22, holdProb: 60, cutProb: 18,
+    yieldRange: '5.0 – 6.5%',
+    recRisk: 'High (~55%)',
+    recColor: '#dc2626',
+    assets: [
+      ['US Large Cap','bear'],['US Small Cap','bear'],['Dev. Markets','bear'],
+      ['Emerg. Markets','bear'],['US Bonds','bear'],['High Yield','bear'],
+      ['Gold','bull'],['Commodities','bull'],['REITs','bear'],['Cash','bull']
+    ],
+    ubsAlign: 'weak', ubsChip: 'Misaligned',
+    ubsText: 'UBS soft landing and S&P 8,200 target are the opposite thesis to stagflation. If unemployment rises alongside CPI staying above 4%, UBS equity targets would be materially wrong. "Lock in yields" is the one call that survives — short-duration IG bonds hold up better than equities.',
+    bofaAlign: 'strong', bofaChip: 'Well Aligned',
+    bofaText: '58% of FMS managers already forecast stagflation — this is BofA\'s working base case, not a tail risk. Investment Clock transition Boom→Stagflation explicitly flags this. Commodity OW (gold, energy) is the correct stagflation hedge. The INTC upgrade is idiosyncratic and regime-agnostic.'
+  },
+  recession: {
+    label: 'Macro Regime — 🔴 Tail Risk',
+    name: 'Recession',
+    color: '#334155',
+    bg: '#f1f5f9',
+    border: '#cbd5e1',
+    desc: 'GDP contracting with unemployment rising. Credit tightens, earnings fall, and the Fed eventually pivots to cuts — but not before financial conditions tighten materially. Flight to quality dominates. High-beta, credit, and small-caps typically lead the selloff. Duration becomes a friend once the pivot is credible.',
+    years: ['2008–09','2020 (H1)'],
+    highlightYears: ['2008','2009','2020'],
+    hikeProb: 5, holdProb: 18, cutProb: 77,
+    yieldRange: '2.5 – 4.0% (falling)',
+    recRisk: 'Confirmed',
+    recColor: '#7f1d1d',
+    assets: [
+      ['US Large Cap','bear'],['US Small Cap','bear'],['Dev. Markets','bear'],
+      ['Emerg. Markets','bear'],['US Bonds','bull'],['High Yield','bear'],
+      ['Gold','bull'],['Commodities','bear'],['REITs','bear'],['Cash','bull']
+    ],
+    ubsAlign: 'weak', ubsChip: 'Not Base Case',
+    ubsText: 'Not UBS\'s base case — they forecast soft landing + S&P 8,200. If recession materialises, UBS equity targets have ~25–35% downside. The only UBS call that holds in recession is "lock in yields" (duration extends as Fed cuts).',
+    bofaAlign: 'partial', bofaChip: 'Tail Risk Scenario',
+    bofaText: 'BofA assigns ~20% probability to recession via FMS tail risk mapping. Key triggers: trade war escalation causing credit crunch, or inflation shock forcing an aggressive hike cycle that breaks something. B&B 8.9 sell signal is a leading indicator of elevated recession risk.'
+  },
+  recovery: {
+    label: 'Macro Regime',
+    name: 'Recovery / Easing Cycle',
+    color: '#1d4ed8',
+    bg: '#dbeafe',
+    border: '#93c5fd',
+    desc: 'Inflation normalising, Fed cutting, and growth recovering from a trough. High-beta assets — small cap, EM, HY, REITs — typically lead off the lows. Risk appetite expands rapidly. Cash is penalised as rates fall. The 2009 and 2020-H2 recoveries are the clearest templates.',
+    years: ['2009','2010','2020 (H2)','2021'],
+    highlightYears: ['2009','2010','2020','2021'],
+    hikeProb: 0, holdProb: 12, cutProb: 88,
+    yieldRange: '3.0 – 4.0% (falling)',
+    recRisk: 'Fading',
+    recColor: '#15803d',
+    assets: [
+      ['US Large Cap','bull'],['US Small Cap','bull'],['Dev. Markets','bull'],
+      ['Emerg. Markets','bull'],['US Bonds','neutral'],['High Yield','bull'],
+      ['Gold','neutral'],['Commodities','bull'],['REITs','bull'],['Cash','bear']
+    ],
+    ubsAlign: 'partial', ubsChip: 'Forward-Looking Match',
+    ubsText: 'UBS 2H26 soft-landing scenario is a bridge to this regime: disinflation + first cut Mar \'27 = recovery dynamics. Their S&P 8,200 target and EM calls (Korea +100%, MSCI China +21%) make most sense in early recovery. The path requires CPI to crack.',
+    bofaAlign: 'partial', bofaChip: 'Not There Yet',
+    bofaText: 'BofA is waiting for the regime trigger: CPI below 3% and B&B dropping back below 8.0 would confirm a buy signal. Recovery positioning (add small cap, EM, HY, restore equity OW) is the playbook, but it hasn\'t activated. FMS cash levels at 4.5% suggest managers are positioned defensively, not for recovery.'
+  }
+};
+
+function detectRegime(cpi, unemp, gdp, fed) {
+  if (gdp === 'contraction') return 'recession';
+  if (gdp === 'weak' && unemp === 'rising') return 'recession';
+  if (cpi === 'above4' && (gdp === 'weak' || unemp === 'rising')) return 'stagflation';
+  if (cpi === 'above4' && (fed === 'hawkish' || fed === 'hiking')) return 'highInflation';
+  if (cpi === 'above4' && fed === 'dovish') return 'stagflation';
+  if ((cpi === 'below2' || cpi === '2to3') && (fed === 'cutting' || fed === 'dovish') && gdp !== 'contraction') return 'recovery';
+  if (cpi === 'below2' && gdp !== 'contraction') return 'goldilocks';
+  if (cpi === '2to3' && gdp !== 'contraction' && fed !== 'hiking') return 'goldilocks';
+  if ((cpi === '2to3' && (fed === 'hiking' || fed === 'hawkish')) || cpi === '3to4') return 'lateCycle';
+  return 'lateCycle';
+}
+
+function probColor(p) {
+  if (p >= 60) return '#dc2626';
+  if (p >= 35) return '#d97706';
+  return '#16a34a';
+}
+
+function runScenario() {
+  const cpi   = document.getElementById('sc-cpi').value;
+  const unemp = document.getElementById('sc-unemp').value;
+  const gdp   = document.getElementById('sc-gdp').value;
+  const fed   = document.getElementById('sc-fed').value;
+
+  const key = detectRegime(cpi, unemp, gdp, fed);
+  const r   = REGIMES[key];
+
+  // Banner
+  const banner = document.getElementById('regime-banner');
+  banner.style.background    = r.bg;
+  banner.style.borderColor   = r.border;
+  banner.innerHTML = `
+    <div class="rg-label">${r.label}</div>
+    <div class="rg-name" style="color:${r.color}">${r.name}</div>
+    <div class="rg-desc">${r.desc}</div>
+    <div class="rg-years">
+      <span class="rg-year-label">Historical analogues:</span>
+      ${r.years.map(y => `<span class="rg-year">${y}</span>`).join('')}
+    </div>`;
+
+  // Probability widget
+  const hikeColor = probColor(r.hikeProb);
+  document.getElementById('hike-val').textContent  = r.hikeProb + '%';
+  document.getElementById('hike-val').style.color  = hikeColor;
+  document.getElementById('hike-bar').style.width  = r.hikeProb + '%';
+  document.getElementById('hike-bar').style.background = hikeColor;
+  document.getElementById('hold-pct').textContent  = r.holdProb + '%';
+  document.getElementById('hold-pct').style.color  = '#d97706';
+  document.getElementById('cut-pct').textContent   = r.cutProb + '%';
+  document.getElementById('cut-pct').style.color   = r.cutProb > 50 ? '#16a34a' : '#64748b';
+  document.getElementById('yield-range').textContent = r.yieldRange;
+  const recEl = document.getElementById('rec-risk');
+  recEl.textContent   = r.recRisk;
+  recEl.style.color   = r.recColor;
+
+  // Asset signals
+  const assetList = document.getElementById('sc-asset-list');
+  assetList.innerHTML = r.assets.map(([name, sig]) => {
+    const labels = { bull:'▲ Favoured', bear:'▼ Headwind', caution:'◆ Caution', neutral:'– Neutral' };
+    return `<div class="sc-asset-row">
+      <span class="sc-asset-name">${name}</span>
+      <span class="sc-sig ${sig}">${labels[sig]}</span>
+    </div>`;
+  }).join('');
+
+  // Alignment
+  const chipClass = { strong: 'align-strong', partial: 'align-partial', weak: 'align-weak' };
+  document.getElementById('sc-alignment-content').innerHTML = `
+    <div class="sc-house ubs">
+      <div class="house-label">🟠 UBS CIO GWM</div>
+      <span class="align-chip ${chipClass[r.ubsAlign]}">${r.ubsChip}</span>
+      <div class="house-text">${r.ubsText}</div>
+    </div>
+    <div class="sc-house bofa">
+      <div class="house-label">🟢 BofA Global Research</div>
+      <span class="align-chip ${chipClass[r.bofaAlign]}">${r.bofaChip}</span>
+      <div class="house-text">${r.bofaText}</div>
+    </div>`;
+
+  // Render quilt with regime highlights
+  renderQuilt(r.highlightYears);
+}
+
+function resetToCurrentMacro() {
+  document.getElementById('sc-cpi').value   = 'above4';
+  document.getElementById('sc-unemp').value = 'stable';
+  document.getElementById('sc-gdp').value   = 'moderate';
+  document.getElementById('sc-fed').value   = 'hawkish';
+  runScenario();
+}
+
+function showTab(name, el) {
+  document.querySelectorAll('.content').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(e => e.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  el.classList.add('active');
+  if (name === 'markets') initEquityChart();
+  if (name === 'scenarios') runScenario();
+}
+
+// Init scenario engine on page load so it's ready when user clicks the tab
+document.addEventListener('DOMContentLoaded', function() { runScenario(); });
+
+let chartInited = false;
+function initEquityChart() {
+  if (chartInited) return;
+  chartInited = true;
+  const ctx = document.getElementById('equityChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['S&P 500','MSCI China','MSCI Asia xJP','MSCI EM','MSCI AC World','FTSE 100','TOPIX','Euro Stoxx 50','SMI'],
+      datasets: [{
+        label: '% Upside to Jun 2027 Target',
+        data: [10.5, 21.3, 10.0, 7.7, 9.2, 7.5, 7.2, 4.8, 4.2],
+        backgroundColor: ['#0284c7','#0284c7','#0284c7','#0ea5e9','#0ea5e9','#7dd3fc','#7dd3fc','#bae6fd','#bae6fd'],
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => `+${ctx.raw}%` } }
+      },
+      scales: {
+        y: { beginAtZero: true, ticks: { callback: v => v + '%' }, grid: { color: '#f1f5f9' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+}
+</script>
+</body>
+</html>
