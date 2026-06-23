@@ -246,6 +246,25 @@
     .sc-inputs { grid-template-columns: 1fr 1fr; }
     .sc-body { grid-template-columns: 1fr; }
   }
+
+  /* ── Alert Status System ── */
+  .status-chip { display: inline-flex; align-items: center; gap: 3px; font-size: 9.5px; font-weight: 700; padding: 1.5px 7px; border-radius: 10px; margin-left: 6px; vertical-align: middle; letter-spacing: 0.2px; cursor: default; white-space: nowrap; }
+  .status-watch    { background: #fef9c3; color: #854d0e; border: 1px solid #fbbf24; }
+  .status-resolved { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+  .status-stale    { background: #f1f5f9; color: #94a3b8; border: 1px solid #cbd5e1; }
+
+  [data-status="resolved"] { opacity: 0.55; }
+  [data-status="stale"]    { opacity: 0.38; filter: grayscale(0.6); }
+
+  .alert-filter-bar { display: flex; align-items: center; gap: 6px; margin-bottom: 14px; background: #fff; border-radius: 8px; padding: 9px 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.07); flex-wrap: wrap; }
+  .alert-filter-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: #64748b; margin-right: 2px; }
+  .filter-btn { display: inline-flex; align-items: center; gap: 4px; padding: 3px 11px; border-radius: 20px; font-size: 10.5px; font-weight: 600; cursor: pointer; border: 1px solid #e2e8f0; background: #f8fafc; color: #64748b; transition: all 0.12s; }
+  .filter-btn:hover { opacity: 0.8; }
+  .filter-btn.active-filter { outline: 2px solid #0f172a; outline-offset: 1px; }
+  .filter-btn-watch    { background: #fef9c3; color: #854d0e; border-color: #fbbf24; }
+  .filter-btn-resolved { background: #dcfce7; color: #15803d; border-color: #86efac; }
+  .filter-btn-stale    { background: #f1f5f9; color: #94a3b8; border-color: #cbd5e1; }
+  .filter-counts { font-size: 9.5px; color: #94a3b8; margin-left: auto; font-style: italic; }
 </style>
 </head>
 <body>
@@ -1609,7 +1628,68 @@ function showTab(name, el) {
 }
 
 // Init scenario engine on page load so it's ready when user clicks the tab
-document.addEventListener('DOMContentLoaded', function() { runScenario(); });
+document.addEventListener('DOMContentLoaded', function() {
+  runScenario();
+  initAlertStatus();
+});
+
+// ── Alert Status System ──
+function initAlertStatus() {
+  const banners = document.querySelectorAll('.alert-banner, .info-banner');
+  const counts = { watch: 0, resolved: 0, stale: 0 };
+
+  banners.forEach(function(el) {
+    // Default to watch if not explicitly set
+    if (!el.dataset.status) el.dataset.status = 'watch';
+    var status = el.dataset.status;
+    counts[status] = (counts[status] || 0) + 1;
+
+    // Extract date from .new-src text (e.g. "NEW · UBS Daily Asia 22 Jun" → "22 Jun")
+    var srcEl = el.querySelector('.new-src');
+    var dateStr = '';
+    if (srcEl) {
+      var m = srcEl.textContent.match(/(\d{1,2}\s+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec))/);
+      if (m) dateStr = m[1];
+    }
+
+    // Inject chip into .ab-title
+    var title = el.querySelector('.ab-title');
+    if (!title) return;
+    var chip = document.createElement('span');
+    chip.className = 'status-chip status-' + status;
+    var icons = { watch: '🟡', resolved: '✅', stale: '⚫' };
+    chip.textContent = (icons[status] || '●') + ' ' +
+      status.charAt(0).toUpperCase() + status.slice(1) +
+      (dateStr ? ' · ' + dateStr : '');
+    title.appendChild(chip);
+  });
+
+  // Add filter bar to top of overview tab
+  var overview = document.getElementById('tab-overview');
+  if (!overview) return;
+  var total = counts.watch + counts.resolved + counts.stale;
+  var bar = document.createElement('div');
+  bar.className = 'alert-filter-bar';
+  bar.innerHTML =
+    '<span class="alert-filter-label">Alerts</span>' +
+    '<button class="filter-btn" onclick="filterAlerts(\'all\',this)">All (' + total + ')</button>' +
+    '<button class="filter-btn filter-btn-watch active-filter" onclick="filterAlerts(\'watch\',this)">🟡 Watch (' + counts.watch + ')</button>' +
+    '<button class="filter-btn filter-btn-resolved" onclick="filterAlerts(\'resolved\',this)">✅ Resolved (' + counts.resolved + ')</button>' +
+    '<button class="filter-btn filter-btn-stale" onclick="filterAlerts(\'stale\',this)">⚫ Stale (' + counts.stale + ')</button>' +
+    '<span class="filter-counts">Filters apply across all tabs</span>';
+  overview.insertBefore(bar, overview.firstChild);
+
+  // Default to Watch filter on load
+  filterAlerts('watch', bar.querySelector('.filter-btn-watch'));
+}
+
+function filterAlerts(status, btn) {
+  document.querySelectorAll('.alert-banner, .info-banner').forEach(function(el) {
+    el.style.display = (status === 'all' || el.dataset.status === status) ? '' : 'none';
+  });
+  document.querySelectorAll('.filter-btn').forEach(function(b) { b.classList.remove('active-filter'); });
+  if (btn) btn.classList.add('active-filter');
+}
 
 let chartInited = false;
 function initEquityChart() {
